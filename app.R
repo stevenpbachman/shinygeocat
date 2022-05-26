@@ -2,7 +2,10 @@
 #library(kewr)
 #library(sf)
 
-# to do
+# to do:
+# add count per occurrence records for csv
+# add TDWG count
+# add LC dials? 
 # conditional panel for gbif and user csv
 # reset everything when user clicks home page
 # add distribution map TDWG
@@ -28,12 +31,14 @@ library(kewr)
 library(igraph)
 library(glue)
 library(DT)
+library(rgbif)
 #devtools::install_github("barnabywalker/kewr")
 #install.packages("devtools")
 #install.packages("igraph")
 
 source("R/get_data.R")
 source("R/get_distributions.R")
+source("R/get_gbif.R")
 
 #### ui ####
 ui <- fluidPage(
@@ -148,33 +153,36 @@ ui <- fluidPage(
                                     fileInput("csv_in", NULL, multiple = FALSE, accept = (".csv")),
                            ), #, plotOutput("plot")),
                            tabPanel("Query GBIF",
-                                    # # Input: select a species from GBIF
-                                    # helpText("Search for a species name in GBIF"),# Action: run the EOO, AOO analysis
-                                    # textInput("searchGBIF", "")
-                                    )
+                                    # Input: select a species from GBIF
+                                    helpText("Enter species name to search GBIF occurrences"),
+                                    textInput("GBIFname", ""),
+                                    # add fluid row here to spread out the maximum input and search button
+                                    helpText("Maximum number of GBIF occurrences (default 1,000, max 10,000)"),
+                                    textInput("GBIFmax", "Enter number", value = 1000, width = '100px'),
+                                    actionButton("searchGBIF", "Query GBIF"))
                            
                ),
                
                # try the conditional panel to switch on when gbif points or csv loaded
               #conditionalPanel(condition = "input.csv_in == true",
               #conditionalPanel(condition = "input.csv_in == true",
-              # shinyWidgets::materialSwitch(
-              #    inputId = "csv_onoff", 
-              #    label = "User occurrences",
-              #    #fill = TRUE, 
-              #    value = FALSE,
-              #    status = "info",
-              #    right = TRUE
-              #  ),
+               shinyWidgets::materialSwitch(
+                  inputId = "csv_onoff", 
+                  label = "User occurrences",
+                  #fill = TRUE, 
+                  value = FALSE,
+                  status = "info",
+                  right = TRUE
+                ),
               
-              # shinyWidgets::materialSwitch(
-              #   inputId = "gbif_onoff", 
-              #   label = "GBIF occurrences",
-              #   #fill = TRUE, 
-              #   value = FALSE,
-              #   status = "success",
-              #   right = TRUE
-              # ),
+               shinyWidgets::materialSwitch(
+                 inputId = "gbif_onoff", 
+                 label = "GBIF occurrences",
+                 #fill = TRUE, 
+                 value = FALSE,
+                 status = "success",
+                 right = TRUE
+               ),
               
                br(),
               
@@ -211,9 +219,18 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-  output$issues = renderDT(
-    issues, options = list(lengthChange = FALSE)
+  # render the issues table for info
+  # https://stackoverflow.com/questions/70155520/how-to-make-datatable-editable-in-r-shiny
+    output$issues = renderDT(
+    issues, editable = TRUE, options = list(lengthChange = FALSE)
   )
+  
+    #observeEvent(input$issues_cell_edit, {
+    #  row  <- input$issues_cell_edit$row
+    #  clmn <- input$issues_cell_edit$col
+    #  issues[row, clmn] <- input$issues_cell_edit$value
+    #})
+
   
   # species lookup using WCVP  
   updateSelectizeInput(session,
@@ -259,7 +276,20 @@ server <- function(input, output, session) {
     
   })
   
-   # leaflet base output map
+  # react to the GBIF search box being used
+  # then trigger code to select best match and get occurrence data
+  gbifpointsInput <- eventReactive(list(input$GBIFname,input$GBIFmax), {
+    req(input$GBIFname)
+    gbif_keys <- name_search(input$GBIFname)
+    gbif_key <- gbif_keys$GBIF_key
+    get_gbif_points(gbif_key, input$GBIFmax)
+    
+  })
+  
+  
+  
+  
+  # leaflet base output map
    output$mymap <- renderLeaflet({
      leaflet() %>%
        
@@ -350,7 +380,7 @@ server <- function(input, output, session) {
     
     leafletProxy("mymap", data = csvpointsInput()) %>%
       
-      clearMarkers() %>%
+      #clearMarkers() %>%
       
       # zoom to fit - can we buffer this a little?
       fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
@@ -365,6 +395,36 @@ server <- function(input, output, session) {
                        fillOpacity = 1,
                        fill = T,
                        fillColor = "#0070ff") #%>%
+    
+    # add convex hull to illustrate EOO
+    #addPolygons(hulls <- data %>%
+    #              st_as_sf(thepoints, coords = c("longitude", "latitude"), crs = 4326) %>%
+    #              geometry = st_combine( geometry )  %>%
+    #              st_convex_hull())  
+    
+    
+  })
+  
+  # proxy map to add gbif points
+  observeEvent(input$searchGBIF,{
+    
+    leafletProxy("mymap", data = gbifpointsInput()) %>%
+      
+      #clearMarkers() %>%
+      
+      # zoom to fit - can we buffer this a little?
+      fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
+      
+      # add markers from the data
+      addCircleMarkers(group = "View Points",
+                       lng = ~longitude,
+                       lat = ~latitude, 
+                       radius = 7, 
+                       color = "#FFFFFF", 
+                       stroke = T,
+                       fillOpacity = 1,
+                       fill = T,
+                       fillColor = "#008000") #%>%
     
     # add convex hull to illustrate EOO
     #addPolygons(hulls <- data %>%
