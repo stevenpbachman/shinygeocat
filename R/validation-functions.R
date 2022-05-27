@@ -1,5 +1,30 @@
 # Functions to validate occurrences and occurrence files
 
+validate_csv <- function(csv) {
+  # error checks
+  missing_fields <- check_fields_(csv, c("longitude", "latitude"))
+  if (! is.null(missing_fields)) {
+    return(missing_fields)
+  }
+  
+  non_numeric <- check_numeric_(csv, c("longitude", "latitude"))
+  if (! is.null(non_numeric)) {
+    return(non_numeric)
+  }
+  
+  # warning checks
+  c(
+    check_complete_(csv, c("longitude", "latitude")),
+    check_range_(csv, "latitude", min=-90, max=90),
+    check_range_(csv, "longitude", min=-180, max=180),
+    check_rounded_(csv, "latitude", digits=0, threshold=0.1),
+    check_rounded_(csv, "longitude", digits=0, threshold=0.1),
+    check_zeros_(csv, "latitude"),
+    check_zeros_(csv, "longitude")
+  )
+}
+
+
 check_fields_ <- function(df, required_fields) {
   msg <- NULL
   
@@ -57,7 +82,7 @@ check_range_ <- function(df, field, min, max) {
 check_rounded_ <- function(df, field, digits=0, threshold=0.1) {
   msg <- NULL
   
-  rounded <- mean(round(df[[field]], digits=digits) == df[[field]])
+  rounded <- mean(round(df[[field]], digits=digits) == df[[field]], na.rm=TRUE)
   
   if (rounded > threshold) {
     msg <- glue::glue("{round(rounded*100)} % of values in the {field}",
@@ -70,7 +95,7 @@ check_rounded_ <- function(df, field, digits=0, threshold=0.1) {
 check_zeros_ <- function(df, field) {
   msg <- NULL
   
-  rounded <- mean(df[[field]] == 0)
+  rounded <- mean(df[[field]] == 0, na.rm=TRUE)
   
   if (rounded > 0) {
     msg <- glue::glue("{round(rounded*100)} % of values in the {field}",

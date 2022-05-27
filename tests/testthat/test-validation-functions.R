@@ -143,3 +143,37 @@ test_that("Column zero count check returns message if zeros present", {
   
   expect_true(grepl(expected_pattern, check_zeros_(df, "latitude")))
 })
+
+test_that("CSV validation returns single message for missing fields", {
+  csv <- data.frame(
+    longitude=c(9999,0,10,-181, NA_real_),
+    name=c("burt", "ernie", "elmo", "oscar", "big bird")
+  )
+  
+  expected_pattern <- ".+ longitude and latitude.+ latitude"
+  
+  expect_true(grepl(expected_pattern, validate_csv(csv)))
+})
+
+test_that("CSV validation returns single message for non-numeric fields", {
+  csv <- data.frame(
+    longitude=c(9999,0,10,-181, NA_real_),
+    latitude=c("burt", "ernie", "elmo", "oscar", "big bird")
+  )
+  
+  expected_pattern <- ".+ latitude .+"
+  
+  expect_true(grepl(expected_pattern, validate_csv(csv)))
+})
+
+test_that("CSV validation returns a message for every warning check", {
+  csv <- data.frame(
+    longitude=c(9999,0,10,-181, NA_real_),
+    latitude=c(0.111, 90.000, 10, -96,0),
+    names=c("burt", "ernie", "elmo", "oscar", "big bird")
+  )
+  
+  messages <- validate_csv(csv)
+  
+  expect_length(messages, 7)
+})
