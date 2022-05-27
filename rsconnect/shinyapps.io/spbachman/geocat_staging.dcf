@@ -5,10 +5,10 @@ account: spbachman
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5908463
-bundleId: 5794771
+bundleId: 5948111
 url: https://spbachman.shinyapps.io/geocat_staging/
-when: 1649862844.0543
-lastSyncTime: 1649862844.0543
+when: 1653583227.27399
+lastSyncTime: 1653583227.27399
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: Carex_canescens_RLC.csv|docs/~$dev_hire_specs.xlsx|docs/dev_hire_specs.xlsx|dypsis_decip_LL.csv
+ignoredFiles: .RData|Carex_canescens_RLC.csv|docs/dev_hire_specs.xlsx

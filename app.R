@@ -138,6 +138,31 @@ ui <- fluidPage(
                  
                  htmlOutput("res_title"),
                  htmlOutput("text"),
+               
+               br(),
+               
+               # try the conditional panel to switch on when gbif points or csv loaded
+               #conditionalPanel(condition = "input.csv_in == true",
+               #conditionalPanel(condition = "input.csv_in == true",
+               shinyWidgets::materialSwitch(
+                 inputId = "csv_onoff", 
+                 label = "User occurrences",
+                 #fill = TRUE, 
+                 value = FALSE,
+                 status = "info",
+                 right = TRUE
+               ),
+               
+               shinyWidgets::materialSwitch(
+                 inputId = "gbif_onoff", 
+                 label = "GBIF occurrences",
+                 #fill = TRUE, 
+                 value = FALSE,
+                 status = "success",
+                 right = TRUE
+               ),
+               
+               br(),
  
                fluidRow(
                  column(8, align="center", offset = 2,
@@ -154,37 +179,29 @@ ui <- fluidPage(
                            ), #, plotOutput("plot")),
                            tabPanel("Query GBIF",
                                     # Input: select a species from GBIF
-                                    helpText("Enter species name to search GBIF occurrences"),
-                                    textInput("GBIFname", ""),
+                                    #helpText("Enter species name to search GBIF occurrences"),
+                                    textInput("GBIFname", "Enter species to search GBIF"),
                                     # add fluid row here to spread out the maximum input and search button
-                                    helpText("Maximum number of GBIF occurrences (default 1,000, max 10,000)"),
-                                    textInput("GBIFmax", "Enter number", value = 1000, width = '100px'),
-                                    actionButton("searchGBIF", "Query GBIF"))
+                                    #helpText("Upper limit for GBIF occurrences (max 10,000)"),
+                                    
+                                    fluidRow(
+                                      column(6, align="left", 
+                                             # would be good if this defaulted to the wcvp name input
+                                             textInput("GBIFmax", "Maximum #", value = 1000)
+                                                ),
+                                      column(6, align="right", 
+                                             actionButton("searchGBIF", "Query GBIF")
+                                             )
+                                    )
+                                    
+                                    #actionButton("searchGBIF", "Query GBIF"))
                            
                ),
-               
-               # try the conditional panel to switch on when gbif points or csv loaded
-              #conditionalPanel(condition = "input.csv_in == true",
-              #conditionalPanel(condition = "input.csv_in == true",
-               shinyWidgets::materialSwitch(
-                  inputId = "csv_onoff", 
-                  label = "User occurrences",
-                  #fill = TRUE, 
-                  value = FALSE,
-                  status = "info",
-                  right = TRUE
-                ),
-              
-               shinyWidgets::materialSwitch(
-                 inputId = "gbif_onoff", 
-                 label = "GBIF occurrences",
-                 #fill = TRUE, 
-                 value = FALSE,
-                 status = "success",
-                 right = TRUE
                ),
-              
+               
                br(),
+               
+             
               
              ),
              

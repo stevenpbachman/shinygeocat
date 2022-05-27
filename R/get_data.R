@@ -25,23 +25,51 @@ library(leaflet.extras)
 #exdir = work_dir
 #unzip(dest, exdir = exdir)
 
-work_dir = getwd()
+#work_dir = getwd()
+here()
 
 # load in the template csv file
-csv_temp = read.csv(paste0(work_dir,"/acacia_anegadensis.csv"),
+# add other fields, not just lat long
+csv_temp <- read.csv(here("data/valid_geocat_occs_small.csv"),
                 encoding="UTF-8", 
                 stringsAsFactors=FALSE,
                 sep = ",")
 
 # load in the WCVP simplified table
-wcvp_data = read.csv(here("R/wcvp_simp.csv"),
+wcvp_data <- read.csv(here("data/wcvp_simp.csv"),
                 sep=",",
                 encoding="UTF-8")
 
-issues = read.csv(here("R/issues.csv"),
+issues <- read.csv(here("data/issues.csv"),
                   encoding="UTF-8", 
                   stringsAsFactors=FALSE,
                   sep = ",")
+
+# translation tables
+translate_occ_fields <- read.csv(here("data/translate_occ_fields.csv"),
+                  encoding="UTF-8", 
+                  stringsAsFactors=FALSE,
+                  sep = ",")
+
+translate_IUCN_codes <- read.csv(here("data/translate_IUCN_codes.csv"),
+                                 encoding="UTF-8", 
+                                 stringsAsFactors=FALSE,
+                                 sep = ",")
+
+translate_basisOfRecord <- read.csv(here("data/translate_basisOfRecord.csv"),
+                                 encoding="UTF-8", 
+                                 stringsAsFactors=FALSE,
+                                 sep = ",")
+
+valid_geocat_occs_large <- read.csv(here("data/valid_geocat_occs_large.csv"),
+                              encoding="UTF-8", 
+                              stringsAsFactors=FALSE,
+                              sep = ",")
+
+valid_geocat_occs_small <- read.csv(here("data/valid_geocat_occs_small.csv"),
+                                    encoding="UTF-8", 
+                                    stringsAsFactors=FALSE,
+                                    sep = ",")
 
 #empty_row = c("77098516-1", "", "", "", "new species","","")
   
