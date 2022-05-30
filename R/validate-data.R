@@ -1,35 +1,9 @@
 # Functions to validate occurrences and occurrence files
 
-validate_csv <- function(csv) {
-  # error checks
-  missing_fields <- check_fields_(csv, c("longitude", "latitude"))
-  if (! is.null(missing_fields)) {
-    return(missing_fields)
-  }
-  
-  non_numeric <- check_numeric_(csv, c("longitude", "latitude"))
-  if (! is.null(non_numeric)) {
-    return(non_numeric)
-  }
-  
-  # warning checks
-  c(
-    check_complete_(csv, c("longitude", "latitude")),
-    check_range_(csv, "latitude", min=-90, max=90),
-    check_range_(csv, "longitude", min=-180, max=180),
-    check_rounded_(csv, "latitude", digits=0, threshold=0.1),
-    check_rounded_(csv, "longitude", digits=0, threshold=0.1),
-    check_zeros_(csv, "latitude"),
-    check_zeros_(csv, "longitude")
-  )
-}
-
-
 check_fields_ <- function(df, required_fields) {
   msg <- NULL
   
   missing_cols <- setdiff(required_fields, colnames(df))
-  
   if (length(missing_cols) > 0) {
     fields_formatted <- glue::glue_collapse(required_fields, ", ", last=" and ")
     missing_formatted <- glue::glue_collapse(missing_cols, ", ", last=" and ")
@@ -45,7 +19,7 @@ check_numeric_ <- function(df, numeric_fields) {
   
   is_numeric <- sapply(numeric_fields, function(x) is.numeric(df[[x]]))
   bad_fields <- names(is_numeric)[!is_numeric]
-  
+
   if (length(bad_fields) > 0) {
     bad_formatted <- glue::glue_collapse(bad_fields, ", ", last=" and ")
     msg <- glue::glue("The column(s) {bad_formatted} contain some values that aren't numbers")
@@ -72,7 +46,7 @@ check_complete_ <- function(df, complete_fields) {
 check_range_ <- function(df, field, min, max) {
   msg <- NULL
   
-  if (any(df[[field]] < min) | any(df[[field]] > max)) {
+  if (any(df[[field]] < min, na.rm=TRUE) | any(df[[field]] > max, na.rm=TRUE)) {
     msg <- glue::glue("Values in {field} found outside {min} and {max}")
   }
   
