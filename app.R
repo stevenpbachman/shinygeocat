@@ -486,14 +486,13 @@ server <- function(input, output, session) {
     
     if (input$Analysis == "TRUE"){
       thedata = csvpointsInput()
+      
       lldata = thedata %>%
-        dplyr::select(longitude,latitude)
-      #lldata = lldata %>%
-      #  dplyr::rename(lat = decimalLatitude,
-      #                long = decimalLongitude)
-      #thepoints <- rCAT::simProjWiz(lldata)
-      #theEOO = rCAT::eoo(thepoints)
-      #theAOO = rCAT::aoo(thepoints)
+        dplyr::select(longitude,latitude) %>%
+        dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
+        dplyr::filter(longitude < 180, longitude > -180,
+                      latitude < 90, latitude > -90)
+      
       theEOO = red::eoo(lldata)
       theAOO = red::aoo(lldata)
       
@@ -528,10 +527,13 @@ server <- function(input, output, session) {
    polyInput = reactive({
      df <- csvpointsInput()
      #df = csv_temp 
-     poly = df %>%
-        sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
-        sf::st_combine()  %>%
-        sf::st_convex_hull()  
+     poly <- df %>%
+       dplyr::filter(if_all(c(longitude, latitude), ~!is.na(.))) %>%
+       dplyr::filter(longitude > -180, longitude < 180, 
+                     latitude > -90, latitude < 90) %>%
+       sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
+       sf::st_combine()  %>%
+       sf::st_convex_hull()  
     })
   
   # proxy map to add polygon
