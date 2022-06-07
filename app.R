@@ -179,24 +179,24 @@ ui <- fluidPage(
                                     #helpText("Upper limit for GBIF occurrences (max 10,000)"),
                                     
                                     fluidRow(
+                                      column(12, align="center",
+                                             tags$h5("Default 1,000 occurrences (maximum 10,000)")
+                                      ),
+                                      #tags$h5("Default 1,000, maximum 10,000"),
                                       column(6, align="left", 
                                              # would be good if this defaulted to the wcvp name input
-                                             textInput("GBIFmax", "Maximum #", value = 1000)
+                                            textInput("GBIFmax", label = NULL, value = "1000")
                                                 ),
                                       column(6, align="right", 
                                              actionButton("searchGBIF", "Query GBIF")
                                              )
                                     )
                                     
-                                    #actionButton("searchGBIF", "Query GBIF"))
-                           
                ),
                ),
                
                br(),
                
-             
-              
              ),
              
              # Main panel for displaying outputs
