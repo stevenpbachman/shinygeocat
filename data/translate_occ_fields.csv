@@ -5,8 +5,8 @@ text,An identifier (preferably unique) for the record within the data set or col
 numeric,Error radius of georeference,coorduncert,optional,coordinateUncertaintyInMeters,coordinateUncertaintyInMeters,https://dwc.tdwg.org/list/#dwc_coordinateUncertaintyInMeters
 text,Country,countrycode,optional,country,country,https://dwc.tdwg.org/list/#dwc_country
 numeric,Collected date - day,day,optional,day,day,https://dwc.tdwg.org/list/#dwc_day
-numeric,Latitude in decimal degrees,dec_lat,required,decimalLatitude,decimalLatitude,https://dwc.tdwg.org/list/#dwc_decimalLatitude
-numeric,Longitude in decimal degrees,dec_long,required,decimalLongitude,decimalLongitude,https://dwc.tdwg.org/list/#dwc_decimalLongitude
+numeric,Latitude in decimal degrees,dec_lat,required,latitude,decimalLatitude,https://dwc.tdwg.org/list/#dwc_decimalLatitude
+numeric,Longitude in decimal degrees,dec_long,required,longitude,decimalLongitude,https://dwc.tdwg.org/list/#dwc_decimalLongitude
 integer_lookup,Why or How the species is in this area - see IUCN Codes,origin,required,establishmentMeans,establishmentMeans,https://dwc.tdwg.org/list/#dwc_establishmentMeans
 text,The full scientific name of the family in which the taxon is classified.,,,family,family,http://rs.tdwg.org/dwc/terms/family
 text,Genus,,,genus,genus,https://dwc.tdwg.org/list/#dwc_genus

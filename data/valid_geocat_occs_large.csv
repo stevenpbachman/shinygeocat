@@ -1,4 +1,4 @@
-BasisOfRec,genus,species,decimalLatitude,decimalLongitude,year,catalogNumber,geodeticDatum,recordedBy,recordNumber
+BasisOfRec,genus,species,latitude,longitude,year,catalogNumber,geodeticDatum,recordedBy,recordNumber
 HumanObservation,Carex,canescens,59.299969,10.826253,2020,23259865,WGS84,Even W. Hanssen|Reidun Braathen,NA
 HumanObservation,Carex,canescens,59.630808,10.831967,2020,23317063,WGS84,Kåre Arnstein Lye,NA
 HumanObservation,Carex,canescens,59.60017,10.860263,2020,23339976,WGS84,Kåre Arnstein Lye,NA

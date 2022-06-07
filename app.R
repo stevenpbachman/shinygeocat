@@ -14,9 +14,6 @@
 # when user select blank - the species name is blank, but user can add
 
 #################
-#1. add POWO native range
-#2. add user csv import with validation
-#################
 library(here)
 library(dplyr)
 library(magrittr)
@@ -32,9 +29,6 @@ library(igraph)
 library(glue)
 library(DT)
 library(rgbif)
-#devtools::install_github("barnabywalker/kewr")
-#install.packages("devtools")
-#install.packages("igraph")
 
 source("R/get_data.R")
 source("R/get_distributions.R")
