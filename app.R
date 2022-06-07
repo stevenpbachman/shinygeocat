@@ -39,6 +39,8 @@ library(rgbif)
 source("R/get_data.R")
 source("R/get_distributions.R")
 source("R/get_gbif.R")
+source("R/validate-data.R")
+
 
 #### ui ####
 ui <- fluidPage(
@@ -169,7 +171,7 @@ ui <- fluidPage(
                         tags$h4("Add occurrence data:")
                  )
                ),
-
+               
                # Output: Tabset w/ plot, summary, and table ----
                tabsetPanel(type = "tabs",
                            tabPanel("Import CSV",
@@ -196,10 +198,13 @@ ui <- fluidPage(
                                     
                                     #actionButton("searchGBIF", "Query GBIF"))
                            
-               ),
+               )),
+
+               fluidRow(
+                 column(12, align="center", verbatimTextOutput("validation"))
                ),
                
-               br(),
+               br()
                
              
               
@@ -208,7 +213,7 @@ ui <- fluidPage(
              # Main panel for displaying outputs
              #column(8,
              mainPanel(
-               leaflet::leafletOutput("mymap", width = "100%", height = 550),
+               leaflet::leafletOutput("mymap", width = "100%", height = 550)
              )),
     
     tabPanel("help",
@@ -288,9 +293,17 @@ server <- function(input, output, session) {
   
   # prepare the points
   csvpointsInput <- eventReactive(input$csv_in, {
+    ext <- tools::file_ext(input$csv_in$datapath)
+    if (ext == "csv") {
+      data <- read.csv(input$csv_in$datapath)
+    } else {
+      shiny::validate("Invalid file; please upload a .csv file")
+    }
     
-    df <- read.csv(input$csv_in$datapath) #encoding = 'UTF-8')
+    shiny::validate(check_fields_(data, c("longitude", "latitude")))
+    shiny::validate(check_numeric_(data, c("longitude", "latitude")))
     
+    data
   })
   
   # react to the GBIF search box being used
@@ -314,7 +327,6 @@ server <- function(input, output, session) {
                lat = 0,
                zoom = 2) %>%
        
-       #setMaxBounds(-180, 90, 180, -90) %>%
        leaflet.extras::addSearchOSM(options = searchOptions(
          autoCollapse = F,
          collapsed = F,
@@ -367,30 +379,44 @@ server <- function(input, output, session) {
        
        
    })
-
-   #rangepoly <- rangepoly$geometry
-
-   #long_name <- renderText(input$wcvp)
    
-   #proxy map to add polygons
-   # observeEvent(input$wcvp,{
-   # 
-   #   leafletProxy("mymap") %>%
-   # 
-   #     clearShapes() %>%
-   # 
-   #     rangepoly <- native_geom(long_name)
-   # 
-   #     addPolygons(
-   #       data = rangepoly$geometry,
-   #       color = "red",
-   #       stroke = T,
-   #       weight = 3,
-   #       fillOpacity = 0.2,
-   #       fill = T,
-   #       fillColor = "#999999")
-   # 
-   #     })
+   output$validation <- renderPrint({
+     data <- csvpointsInput()
+     if (! is.data.frame(data)) {
+       data
+     }
+     msg <- c(
+       check_complete_(data, c("longitude", "latitude")),
+       check_range_(data, "longitude", -180, 180),
+       check_range_(data, "latitude", -90, 90),
+       check_rounded_(data, "longitude"),
+       check_rounded_(data, "latitude"),
+       check_zeros_(data, "longitude"),
+       check_zeros_(data, "latitude")
+     )
+     
+     if (! is.null(msg)) {
+       msg
+     }
+   })
+   
+   observeEvent(input$csv_in, {
+     
+     leafletProxy("mymap", data=csvpointsInput()) %>%
+       
+       # zoom to fit - can we buffer this a little?
+       fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
+       
+       addCircleMarkers(group = "View Points",
+                        lng = ~longitude,
+                        lat = ~latitude, 
+                        radius = 7, 
+                        color = "#FFFFFF", 
+                        stroke = T,
+                        fillOpacity = 1,
+                        fill = T,
+                        fillColor = "#0070ff")
+   })
   
   # proxy map to add csv points
   observeEvent(input$csv_in,{
@@ -460,14 +486,13 @@ server <- function(input, output, session) {
     
     if (input$Analysis == "TRUE"){
       thedata = csvpointsInput()
+      
       lldata = thedata %>%
-        dplyr::select(longitude,latitude)
-      #lldata = lldata %>%
-      #  dplyr::rename(lat = decimalLatitude,
-      #                long = decimalLongitude)
-      #thepoints <- rCAT::simProjWiz(lldata)
-      #theEOO = rCAT::eoo(thepoints)
-      #theAOO = rCAT::aoo(thepoints)
+        dplyr::select(longitude,latitude) %>%
+        dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
+        dplyr::filter(longitude < 180, longitude > -180,
+                      latitude < 90, latitude > -90)
+      
       theEOO = red::eoo(lldata)
       theAOO = red::aoo(lldata)
       
@@ -499,13 +524,16 @@ server <- function(input, output, session) {
   })
   
   # make a polygon from imported csv points
-   polyInput = eventReactive(input$csv_in, {
-     df <- read.csv(input$csv_in$datapath)
+   polyInput = reactive({
+     df <- csvpointsInput()
      #df = csv_temp 
-     poly = df %>%
-        sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
-        sf::st_combine()  %>%
-        sf::st_convex_hull()  
+     poly <- df %>%
+       dplyr::filter(if_all(c(longitude, latitude), ~!is.na(.))) %>%
+       dplyr::filter(longitude > -180, longitude < 180, 
+                     latitude > -90, latitude < 90) %>%
+       sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
+       sf::st_combine()  %>%
+       sf::st_convex_hull()  
     })
   
   # proxy map to add polygon
