@@ -30,8 +30,8 @@ here()
 
 # load in the template csv file
 # add other fields, not just lat long
-csv_temp <- read.csv(here("data/valid_geocat_occs_small.csv"),
-                encoding="UTF-8", 
+csv_template <- read.csv(here("data/csv_template.csv"),
+                #encoding="UTF-8", 
                 stringsAsFactors=FALSE,
                 sep = ",")
 

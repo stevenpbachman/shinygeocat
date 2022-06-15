@@ -18,7 +18,7 @@ library(here)
 library(dplyr)
 library(magrittr)
 library(shiny)
-#library(shinythemes)
+library(shinythemes)
 library(shinyWidgets)
 library(leaflet)
 library(leaflet.extras)
@@ -278,10 +278,10 @@ server <- function(input, output, session) {
   # set up the download for the temp file
   output$downloadtempcsv <- downloadHandler(
     filename = function() {
-      paste("csv_temp.csv", sep="")
+      paste("csv_template.csv", sep="")
     },
     content = function(file) {
-      write.csv(csv_temp, file, row.names = FALSE)
+      write.csv(csv_template, file, row.names = FALSE)
     }
   )
   
