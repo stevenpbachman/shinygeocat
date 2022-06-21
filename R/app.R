@@ -1,7 +1,7 @@
-
 geocatApp <- function(...) {
   #### ui ####
-  ui <- shiny::fluidPage(
+  ui <- fluidPage(
+    shinyjs::useShinyjs(),
     
     # set theme
     #theme = shinythemes::shinytheme("darkly"),
@@ -91,10 +91,10 @@ geocatApp <- function(...) {
                  shiny::textOutput("wcvp_selection"),
                  tags$hr(style="border-color: white;"),
                  
-                 shinyWidgets::materialSwitch(inputId = "Analysis", 
+                 disabled(materialSwitch(inputId = "Analysis", 
                                 label = "Analysis on/off", 
                                 value = FALSE,
-                                status = "success"),
+                                status = "success")),
                  
                  shiny::htmlOutput("res_title"),
                  shiny::htmlOutput("text"),
@@ -360,7 +360,11 @@ geocatApp <- function(...) {
       }
     })
     
-    shiny::observeEvent(input$csv_in, {
+    observeEvent(input$csv_in, {
+      shinyjs::enable("Analysis")
+    })
+    
+    observeEvent(input$csv_in, {
       
       leaflet::leafletProxy("mymap", data=csvpointsInput()) %>%
         
