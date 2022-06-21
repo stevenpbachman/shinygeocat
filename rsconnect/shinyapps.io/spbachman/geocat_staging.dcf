@@ -1,0 +1,14 @@
+name: geocat_staging
+title: geocat_staging
+username:
+account: spbachman
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 5908463
+bundleId: 6026985
+url: https://spbachman.shinyapps.io/geocat_staging/
+when: 1655802435.72622
+lastSyncTime: 1655802435.72622
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: docs/dev_hire_specs.xlsx|docs/occ_fields_translator.xlsx|tests/testthat/test-validation-functions.R|tests/testthat.R

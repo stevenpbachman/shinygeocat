@@ -30,10 +30,10 @@ library(glue)
 library(DT)
 library(rgbif)
 
-source("R/get_data.R")
-source("R/get_distributions.R")
-source("R/get_gbif.R")
-source("R/validate-data.R")
+#source("R/get_data.R")
+#source("R/get_distributions.R")
+#source("R/get_gbif.R")
+#source("R/validate-data.R")
 
 
 #### ui ####
