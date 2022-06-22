@@ -104,22 +104,24 @@ geocatApp <- function(...) {
                  # try the conditional panel to switch on when gbif points or csv loaded
                  #conditionalPanel(condition = "input.csv_in == true",
                  #conditionalPanel(condition = "input.csv_in == true",
-                 shinyWidgets::materialSwitch(
-                   inputId = "csv_onoff", 
-                   label = "User occurrences",
-                   #fill = TRUE, 
-                   value = FALSE,
-                   status = "info",
-                   right = TRUE
+                 disabled(
+                   shinyWidgets::materialSwitch(
+                     inputId = "csv_onoff", 
+                     label = "User occurrences",
+                     value = FALSE,
+                     status = "info",
+                     right = TRUE
+                   )
                  ),
                  
-                 shinyWidgets::materialSwitch(
-                   inputId = "gbif_onoff", 
-                   label = "GBIF occurrences",
-                   #fill = TRUE, 
-                   value = FALSE,
-                   status = "success",
-                   right = TRUE
+                 disabled(
+                   shinyWidgets::materialSwitch(
+                     inputId = "gbif_onoff", 
+                     label = "GBIF occurrences",
+                     value = FALSE,
+                     status = "success",
+                     right = TRUE
+                   )
                  ),
                  
                  br(),
@@ -279,7 +281,7 @@ geocatApp <- function(...) {
     
     # react to the GBIF search box being used
     # then trigger code to select best match and get occurrence data
-    gbifpointsInput <- shiny::eventReactive(list(input$GBIFname,input$GBIFmax), {
+    gbifpointsInput <- shiny::eventReactive(input$searchGBIF, {
       req(input$GBIFname)
       gbif_keys <- name_search(input$GBIFname)
       gbif_key <- gbif_keys$GBIF_key
@@ -357,7 +359,6 @@ geocatApp <- function(...) {
             "Open Topo Map",
             "ESRI Open Street map"
           ),
-          #overlayGroups = c("User points", "GBIF points"),
           options = leaflet::layersControlOptions(collapsed = FALSE)
         )
       
@@ -387,6 +388,8 @@ geocatApp <- function(...) {
     
     observeEvent(input$csv_in, {
       shinyjs::enable("Analysis")
+      shinyjs::enable("csv_onoff")
+      shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
     })
     
     observeEvent(input$csv_in, {
@@ -431,6 +434,8 @@ geocatApp <- function(...) {
     
     observeEvent(input$searchGBIF, {
       shinyjs::enable("Analysis")
+      shinyjs::enable("gbif_onoff")
+      shinyWidgets::updateMaterialSwitch(session, "gbif_onoff", value=TRUE)
     })
     
     # proxy map to add gbif points
@@ -452,10 +457,23 @@ geocatApp <- function(...) {
     })
     
     #output to analysis on/off switch
-    calculateAnalyisis <- eventReactive(input$Analysis, {
+    calculateAnalyisis <- eventReactive(list(input$Analysis, input$gbif_onoff, input$csv_onoff), {
 
       if (input$Analysis) {
-        d <- dplyr::select(values$analysis_data, -source)
+        d <- values$analysis_data
+        if (!input$gbif_onoff) {
+          d <- dplyr::filter(d, source != "gbif")
+        }
+        
+        if (!input$csv_onoff) {
+          d <- dplyr::filter(d, source != "csv")
+        }
+        
+        if (nrow(d) == 0)  {
+          return()
+        }
+        
+        d <- dplyr::select(d, -source)
         
         EOO <- red::eoo(d)
         AOO <- red::aoo(d)
