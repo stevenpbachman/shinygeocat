@@ -1,48 +1,31 @@
-library(shiny)
-
-#################
-library(here)
-library(dplyr)
-library(magrittr)
-library(shiny)
-library(shinythemes)
-library(shinyWidgets)
-library(leaflet)
-library(leaflet.extras)
-library(red)
-library(sf)
-library(kewr)
-library(glue)
-library(DT)
-library(rgbif)
 
 geocatApp <- function(...) {
   #### ui ####
-  ui <- fluidPage(
+  ui <- shiny::fluidPage(
     
     # set theme
     #theme = shinythemes::shinytheme("darkly"),
     #theme = bslib::bs_theme(bootswatch = "united"),
     
     # Navigation
-    navbarPage(
+    shiny::navbarPage(
       
       "GeoCAT",
       id = "navGeoCAT",
-      tabPanel(
+      shiny::tabPanel(
         "Home",
-        wellPanel(fluidRow(
+        shiny::wellPanel(fluidRow(
           column(12,
                  align = "center",
                  tags$h1("Welcome to GeoCAT - select a species to assess")
           ),
         ),
         
-        fluidRow(
+        shiny::fluidRow(
           column(3),
           column(6, align = "center",
                  # testing the WCVP selector
-                 selectizeInput('wcvp',
+                 shiny::selectizeInput('wcvp',
                                 #options = list(placeholder = 'select a species name'),
                                 label = "Select a name - use 'Backspace' or 'Delete' to reset",
                                 choices = NULL
@@ -53,33 +36,33 @@ geocatApp <- function(...) {
           column(3)
         ),
         
-        fluidRow(
+        shiny::fluidRow(
           column(4),
           column(4, align="center",
-                 actionButton("gotoAnalysis", "Go to analysis",
+                 shiny::actionButton("gotoAnalysis", "Go to analysis",
                               style="color: #fff; background-color: #FF8C00; border-color: #CD6600")
           ),
           column(4),
         ),
         br(),
         
-        fluidRow(
+        shiny::fluidRow(
           column(12, align="center",
-                 actionLink("gotoBlank", "Or start a blank assessment")
+                 shiny::actionLink("gotoBlank", "Or start a blank assessment")
           ),
         ),
         br(),
-        fluidRow(
+        shiny::fluidRow(
           column(12, align="center",
                  tags$h4("Geospatial Conservation Assessment Tool. Perform rapid geospatial analysis of species in a simple and powerful way.")
           )
         ),
         
-        fluidRow(
+        shiny::fluidRow(
           column(12,
                  tags$h2(
                    "Note that this is a test version and is not stable - see list of known issues/things to do. Email s.bachman@kew.org to send any requests or highlight bugs"),
-                 DTOutput('issues')
+                 DT::DTOutput('issues')
                  
           ),
         ),
@@ -90,31 +73,31 @@ geocatApp <- function(...) {
       ),
       
       # closing wellPanel
-      tabPanel("table",
-               fluidRow(column(
-                 dataTableOutput(outputId = "points_tab_selection"), width = 12
+      shiny::tabPanel("table",
+                      shiny::fluidRow(column(
+                 DT::dataTableOutput(outputId = "points_tab_selection"), width = 12
                ))),
-      tabPanel("map",
+      shiny::tabPanel("map",
                #fluidRow(column(4,
                #sidebarLayout(
                # Sidebar panel for inputs
-               sidebarPanel(
-                 fluidRow(
+               shiny::sidebarPanel(
+                 shiny::fluidRow(
                    column(8, align="center", offset = 2,
                           tags$h4("You are assessing:")
                    )
                  ),
                  
-                 textOutput("wcvp_selection"),
+                 shiny::textOutput("wcvp_selection"),
                  tags$hr(style="border-color: white;"),
                  
-                 materialSwitch(inputId = "Analysis", 
+                 shinyWidgets::materialSwitch(inputId = "Analysis", 
                                 label = "Analysis on/off", 
                                 value = FALSE,
                                 status = "success"),
                  
-                 htmlOutput("res_title"),
-                 htmlOutput("text"),
+                 shiny::htmlOutput("res_title"),
+                 shiny::htmlOutput("text"),
                  
                  br(),
                  
@@ -141,27 +124,27 @@ geocatApp <- function(...) {
                  
                  br(),
                  
-                 fluidRow(
+                 shiny::fluidRow(
                    column(8, align="center", offset = 2,
                           tags$h4("Add occurrence data:")
                    )
                  ),
                  
                  # Output: Tabset w/ plot, summary, and table ----
-                 tabsetPanel(type = "tabs",
-                             tabPanel("Import CSV",
+                 shiny::tabsetPanel(type = "tabs",
+                                    shiny::tabPanel("Import CSV",
                                       # Input: input csv file
-                                      helpText("Upload a CSV with 'longitude' and 'latitude' fields"),
-                                      fileInput("csv_in", NULL, multiple = FALSE, accept = (".csv")),
+                                      shiny::helpText("Upload a CSV with 'longitude' and 'latitude' fields"),
+                                      shiny::fileInput("csv_in", NULL, multiple = FALSE, accept = (".csv")),
                              ), #, plotOutput("plot")),
-                             tabPanel("Query GBIF",
+                             shiny::tabPanel("Query GBIF",
                                       # Input: select a species from GBIF
                                       #helpText("Enter species name to search GBIF occurrences"),
-                                      textInput("GBIFname", "Enter species to search GBIF"),
+                                      shiny::textInput("GBIFname", "Enter species to search GBIF"),
                                       # add fluid row here to spread out the maximum input and search button
                                       #helpText("Upper limit for GBIF occurrences (max 10,000)"),
                                       
-                                      fluidRow(
+                                      shiny::fluidRow(
                                         column(12, align="center",
                                                tags$h5("Default 1,000 occurrences (maximum 10,000)")
                                         ),
@@ -177,7 +160,7 @@ geocatApp <- function(...) {
                                       
                              )),
                  
-                 fluidRow(
+                 shiny::fluidRow(
                    column(12, align="center", verbatimTextOutput("validation"))
                  ),
                  
@@ -187,19 +170,19 @@ geocatApp <- function(...) {
                
                # Main panel for displaying outputs
                #column(8,
-               mainPanel(
+               shiny::mainPanel(
                  leaflet::leafletOutput("mymap", width = "100%", height = 550)
                )),
       
-      tabPanel("help",
-               fluidRow(
+      shiny::tabPanel("help",
+                      shiny::fluidRow(
                  column(12, align="center",
                         downloadButton("downloadtempcsv", 
                                        "Download template occurrence csv file")
                  )
                ),
                br(),
-               fluidRow(
+               shiny::fluidRow(
                  column(12, align="left",
                         "More to add here - training material etc.
                       GeoCAT help
@@ -217,7 +200,7 @@ geocatApp <- function(...) {
     
     # render the issues table for info
     # https://stackoverflow.com/questions/70155520/how-to-make-datatable-editable-in-r-shiny
-    output$issues = renderDT(
+    output$issues = DT::renderDT(
       issues, editable = TRUE, options = list(lengthChange = FALSE)
     )
     
@@ -229,7 +212,7 @@ geocatApp <- function(...) {
     
     
     # species lookup using WCVP  
-    updateSelectizeInput(session,
+    shiny::updateSelectizeInput(session,
                          'wcvp',
                          choices = wcvp_data$taxon_name_authors,
                          server = TRUE,
@@ -238,25 +221,25 @@ geocatApp <- function(...) {
                          label = NULL)
     
     # display selected name
-    output$wcvp_selection <- renderText(input$wcvp)
+    output$wcvp_selection <- shiny::renderText(input$wcvp)
     
     # link to navpanel map
     observeEvent(input$gotoAnalysis, {
-      updateTabsetPanel(session, "navGeoCAT",
+      shiny::updateTabsetPanel(session, "navGeoCAT",
                         selected = "map"
       )
     })
     
     # link to navpanel map
     # need to add something to clear the default selected species
-    observeEvent(input$gotoBlank, {
-      updateTabsetPanel(session, "navGeoCAT",
+    shiny::observeEvent(input$gotoBlank, {
+      shiny::updateTabsetPanel(session, "navGeoCAT",
                         selected = "map"
       )
     })
     
     # set up the download for the temp file
-    output$downloadtempcsv <- downloadHandler(
+    output$downloadtempcsv <- shiny::downloadHandler(
       filename = function() {
         paste("csv_template.csv", sep="")
       },
@@ -266,7 +249,7 @@ geocatApp <- function(...) {
     )
     
     # prepare the points
-    csvpointsInput <- eventReactive(input$csv_in, {
+    csvpointsInput <- shiny::eventReactive(input$csv_in, {
       ext <- tools::file_ext(input$csv_in$datapath)
       if (ext == "csv") {
         data <- read.csv(input$csv_in$datapath)
@@ -282,7 +265,7 @@ geocatApp <- function(...) {
     
     # react to the GBIF search box being used
     # then trigger code to select best match and get occurrence data
-    gbifpointsInput <- eventReactive(list(input$GBIFname,input$GBIFmax), {
+    gbifpointsInput <- shiny::eventReactive(list(input$GBIFname,input$GBIFmax), {
       req(input$GBIFname)
       gbif_keys <- name_search(input$GBIFname)
       gbif_key <- gbif_keys$GBIF_key
@@ -294,23 +277,23 @@ geocatApp <- function(...) {
     
     
     # leaflet base output map
-    output$mymap <- renderLeaflet({
-      leaflet() %>%
+    output$mymap <- leaflet::renderLeaflet({
+      leaflet::leaflet() %>%
         
-        setView(lng = 0,
+        leaflet::setView(lng = 0,
                 lat = 0,
                 zoom = 2) %>%
         
-        leaflet.extras::addSearchOSM(options = searchOptions(
+        leaflet.extras::addSearchOSM(options = leaflet.extras::searchOptions(
           autoCollapse = F,
           collapsed = F,
           minLength = 2,
           position = "topright"
         )) %>%
         
-        addScaleBar(position = "bottomright") %>%
+        leaflet::addScaleBar(position = "bottomright") %>%
         
-        addMeasure(
+        leaflet::addMeasure(
           position = "bottomleft",
           primaryLengthUnit = "meters",
           primaryAreaUnit = "sqmeters",
@@ -318,29 +301,32 @@ geocatApp <- function(...) {
           completedColor = "#241ad9"
         ) %>%
         
-        addProviderTiles(
-          providers$Esri.WorldImagery,
+        leaflet::addProviderTiles(
+          provider = "Esri.WorldImagery",
+          #provider$Esri.WorldImagery,
           group = "ESRI World Imagery (default)",
-          options = providerTileOptions(noWrap = TRUE)
+          options = leaflet::providerTileOptions(noWrap = TRUE)
         )  %>%
         
-        addProviderTiles(
-          providers$Esri.WorldStreetMap,
+        leaflet::addProviderTiles(
+          provider = "Esri.WorldStreetMap",
           group = "ESRI Open Street map",
-          options = providerTileOptions(noWrap = TRUE)
+          options = leaflet::providerTileOptions(noWrap = TRUE)
         )  %>%
         
-        addProviderTiles(
-          providers$OpenStreetMap.Mapnik,
+        leaflet::addProviderTiles(
+          provider = "OpenStreetMap.Mapnik",
           group = "Open Street Map",
-          options = providerTileOptions(noWrap = TRUE)
+          options = leaflet::providerTileOptions(noWrap = TRUE)
         )  %>%
         
-        addProviderTiles(providers$OpenTopoMap,
-                         group = "Open Topo Map",
-                         options = providerTileOptions(noWrap = TRUE))  %>%
+        leaflet::addProviderTiles(
+          provider = "OpenTopoMap",
+          #provider$OpenTopoMap,
+          group = "Open Topo Map",
+          options = leaflet::providerTileOptions(noWrap = TRUE))  %>%
         
-        addLayersControl(
+        leaflet::addLayersControl(
           baseGroups = c(
             "ESRI World Imagery",
             "Open Street Map",
@@ -348,13 +334,13 @@ geocatApp <- function(...) {
             "ESRI Open Street map"
           ),
           #overlayGroups = c("User points", "GBIF points"),
-          options = layersControlOptions(collapsed = FALSE)
+          options = leaflet::layersControlOptions(collapsed = FALSE)
         )
       
       
     })
     
-    output$validation <- renderPrint({
+    output$validation <- shiny::renderPrint({
       data <- csvpointsInput()
       if (! is.data.frame(data)) {
         data
@@ -374,14 +360,14 @@ geocatApp <- function(...) {
       }
     })
     
-    observeEvent(input$csv_in, {
+    shiny::observeEvent(input$csv_in, {
       
-      leafletProxy("mymap", data=csvpointsInput()) %>%
+      leaflet::leafletProxy("mymap", data=csvpointsInput()) %>%
         
         # zoom to fit - can we buffer this a little?
-        fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
+        leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
         
-        addCircleMarkers(group = "View Points",
+        leaflet::addCircleMarkers(group = "View Points",
                          lng = ~longitude,
                          lat = ~latitude, 
                          radius = 7, 
@@ -393,17 +379,17 @@ geocatApp <- function(...) {
     })
     
     # proxy map to add csv points
-    observeEvent(input$csv_in,{
+    shiny::observeEvent(input$csv_in,{
       
-      leafletProxy("mymap", data = csvpointsInput()) %>%
+      leaflet::leafletProxy("mymap", data = csvpointsInput()) %>%
         
         #clearMarkers() %>%
         
         # zoom to fit - can we buffer this a little?
-        fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
+        leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
         
         # add markers from the data
-        addCircleMarkers(group = "View Points",
+        leaflet::addCircleMarkers(group = "View Points",
                          lng = ~longitude,
                          lat = ~latitude, 
                          radius = 7, 
@@ -423,17 +409,17 @@ geocatApp <- function(...) {
     })
     
     # proxy map to add gbif points
-    observeEvent(input$searchGBIF,{
+    shiny::observeEvent(input$searchGBIF,{
       
-      leafletProxy("mymap", data = gbifpointsInput()) %>%
+      leaflet::leafletProxy("mymap", data = gbifpointsInput()) %>%
         
         #clearMarkers() %>%
         
         # zoom to fit - can we buffer this a little?
-        fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
+        leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
         
         # add markers from the data
-        addCircleMarkers(group = "View Points",
+        leaflet::addCircleMarkers(group = "View Points",
                          lng = ~longitude,
                          lat = ~latitude, 
                          radius = 7, 
@@ -453,7 +439,7 @@ geocatApp <- function(...) {
     })
     
     #output to analysis on/off switch
-    switchon = eventReactive(input$Analysis, {
+    switchon = shiny::eventReactive(input$Analysis, {
       
       # catch when either one or both data inputs exist
       # if else?
@@ -489,16 +475,16 @@ geocatApp <- function(...) {
     })
     
     # render the output of the EOO and AOO results
-    output$res_title <- renderUI({
+    output$res_title <- shiny::renderUI({
       HTML(paste0("<b>", "Results:", "</b>"))
     })
     
-    output$text <- renderUI({
+    output$text <- shiny::renderUI({
       switchon()
     })
     
     # make a polygon from imported csv points
-    polyInput = reactive({
+    polyInput = shiny::reactive({
       df <- csvpointsInput()
       #df = csv_temp 
       poly <- df %>%
@@ -511,17 +497,17 @@ geocatApp <- function(...) {
     })
     
     # proxy map to add polygon
-    observeEvent(input$Analysis, {
+    shiny::observeEvent(input$Analysis, {
       
       if (input$Analysis == "TRUE"){
         
-        leafletProxy("mymap",data = polyInput()) %>%
+        leaflet::leafletProxy("mymap",data = polyInput()) %>%
           
           # clear previous polygons
           #clearShapes() %>%
           
           # add polygons input from csv
-          addPolygons(
+          leaflet::addPolygons(
             color = "#000000",
             stroke = T,
             weight = 3,
@@ -531,10 +517,10 @@ geocatApp <- function(...) {
         
         # TO DO - add AOO cells?
       } else {
-        leafletProxy("mymap",data = polyInput()) %>%
+        leaflet::leafletProxy("mymap",data = polyInput()) %>%
           
           # clear previous polygons
-          clearShapes()
+          leaflet::clearShapes()
       }
       
     })

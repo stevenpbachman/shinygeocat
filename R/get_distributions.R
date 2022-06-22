@@ -5,7 +5,7 @@ library(httr)
 library(readr)
 
 #load in the TDWG geometry
-TDWG_LEVEL3 <- read_rds(here("R/tdwg_level3.rds"))
+#TDWG_LEVEL3 <- read_rds(here("R/tdwg_level3.rds"))
 
 # get native geom
 native_geom = function(long_name){

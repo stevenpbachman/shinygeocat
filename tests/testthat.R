@@ -1,4 +1,4 @@
 library(testthat)
-library(geocat_staging)
+library(geocat)
 
-test_check("geocat_staging")
+test_check("geocat")
