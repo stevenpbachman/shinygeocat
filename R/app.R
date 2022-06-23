@@ -91,7 +91,7 @@ geocatApp <- function(...) {
                  shiny::textOutput("wcvp_selection"),
                  tags$hr(style="border-color: white;"),
                  
-                 disabled(materialSwitch(inputId = "Analysis", 
+                 shinyjs::disabled(shinyWidgets::materialSwitch(inputId = "Analysis", 
                                 label = "Analysis on/off", 
                                 value = FALSE,
                                 status = "success")),
@@ -104,7 +104,7 @@ geocatApp <- function(...) {
                  # try the conditional panel to switch on when gbif points or csv loaded
                  #conditionalPanel(condition = "input.csv_in == true",
                  #conditionalPanel(condition = "input.csv_in == true",
-                 disabled(
+                 shinyjs::disabled(
                    shinyWidgets::materialSwitch(
                      inputId = "csv_onoff", 
                      label = "User occurrences",
@@ -114,7 +114,7 @@ geocatApp <- function(...) {
                    )
                  ),
                  
-                 disabled(
+                 shinyjs::disabled(
                    shinyWidgets::materialSwitch(
                      inputId = "gbif_onoff", 
                      label = "GBIF occurrences",
@@ -200,7 +200,7 @@ geocatApp <- function(...) {
   ##### server
   server <- function(input, output, session) {
     values <- reactiveValues(
-      analysis_data=tibble()
+      analysis_data=tibble::tibble()
     )
     
     # render the issues table for info
@@ -229,7 +229,7 @@ geocatApp <- function(...) {
     output$wcvp_selection <- shiny::renderText(input$wcvp)
     
     # link to navpanel map
-    observeEvent(input$gotoAnalysis, {
+    shiny::observeEvent(input$gotoAnalysis, {
       shiny::updateTabsetPanel(session, "navGeoCAT",
                         selected = "map"
       )
@@ -273,7 +273,7 @@ geocatApp <- function(...) {
             dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
             dplyr::filter(longitude < 180, longitude > -180,
                           latitude < 90, latitude > -90) %>%
-            mutate(source="csv")
+            dplyr::mutate(source="csv")
         )
       
       data
@@ -295,7 +295,7 @@ geocatApp <- function(...) {
             dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
             dplyr::filter(longitude < 180, longitude > -180,
                           latitude < 90, latitude > -90) %>%
-            mutate(source="gbif")
+            dplyr::mutate(source="gbif")
         )
       
       gbif_points
@@ -386,13 +386,13 @@ geocatApp <- function(...) {
     })
     
     
-    observeEvent(input$csv_in, {
+    shiny::observeEvent(input$csv_in, {
       shinyjs::enable("Analysis")
       shinyjs::enable("csv_onoff")
       shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
     })
     
-    observeEvent(input$csv_in, {
+    shiny::observeEvent(input$csv_in, {
       
       leaflet::leafletProxy("mymap", data=csvpointsInput()) %>%
         
@@ -432,7 +432,7 @@ geocatApp <- function(...) {
                          fillColor = "#0070ff")
     })
     
-    observeEvent(input$searchGBIF, {
+    shiny::observeEvent(input$searchGBIF, {
       shinyjs::enable("Analysis")
       shinyjs::enable("gbif_onoff")
       shinyWidgets::updateMaterialSwitch(session, "gbif_onoff", value=TRUE)
@@ -440,9 +440,9 @@ geocatApp <- function(...) {
     
     # proxy map to add gbif points
     shiny::observeEvent(input$searchGBIF,{
-      leafletProxy("mymap", data = gbifpointsInput()) %>%
+      leaflet::leafletProxy("mymap", data = gbifpointsInput()) %>%
         # zoom to fit - can we buffer this a little?
-        fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
+        leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
         # add markers from the data
         leaflet::addCircleMarkers(group = "View Points",
                          lng = ~longitude,
@@ -519,7 +519,7 @@ geocatApp <- function(...) {
       if (input$Analysis){
         
 
-        leafletProxy("mymap",data = polyInput()) %>%
+        leaflet::leafletProxy("mymap",data = polyInput()) %>%
           # add polygons input from csv
           leaflet::addPolygons(
             color = "#000000",

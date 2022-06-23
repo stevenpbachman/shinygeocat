@@ -40,7 +40,7 @@ lookup_powo_old <- function(ID, distribution=FALSE) {
 
 # pull back native range codes
 get_native_range = function(ID){
-  results = tibble(
+  results = tibble::tibble(
     LEVEL3_COD=NA_character_,
     featureId=NA_character_,
     tdwgLevel=NA_integer_,
@@ -55,9 +55,9 @@ get_native_range = function(ID){
     filter(establishment == "Native")
   
   if (! is.null(distribution)) {
-    results = mutate(distribution, POWO_ID=ID)
-    results = rename(results, LEVEL3_NAM=name, LEVEL3_COD=tdwgCode)
-    results = mutate(results, LEVEL3_NAM=recode(LEVEL3_NAM, "á"="a"))
+    results = dplyr::mutate(distribution, POWO_ID=ID)
+    results = dplyr::rename(results, LEVEL3_NAM=name, LEVEL3_COD=tdwgCode)
+    results = dplyr::mutate(results, LEVEL3_NAM=recode(LEVEL3_NAM, "á"="a"))
   }
   
   return(results)

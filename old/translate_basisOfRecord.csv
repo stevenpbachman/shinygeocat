@@ -1,9 +1,0 @@
-field,darwincore,iucn,iucn_definition
-basisOfRecord,PreservedSpecimen,PreservedSpecimen,"A physical object representing one or more organisms, part of organism, or artifact of an organism. synonyms: voucher, collection, lot."
-basisOfRecord,FossilSpecimen,FossilSpecimen,"A physical object representing one or more fossil organisms, part of fossil organism, or artifact of a fossil organism."
-basisOfRecord,LivingSpecimen,LivingSpecimen,An organism removed from its natural occurrence and now living in captivity or cultivation.
-basisOfRecord,HumanObservation,HumanObservation,A report by a known observer that an organism was present at the place and time.
-basisOfRecord,MachineObservation,MachineObservation,A report by a monitoring device that an organism was present at the place and time.
-basisOfRecord,MachineObservation,StillImage,"An photograph, drawing, painting."
-basisOfRecord,MachineObservation,MovingImage,A sequence of still images taken at regular intervals and intended to be played back as a moving image; may include sound.
-basisOfRecord,MachineObservation,SoundRecording,An audio recording.
