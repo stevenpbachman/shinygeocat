@@ -1,2 +1,0 @@
-data_source,analysis_projection,occurrenceID,occurrenceStatus,basisOfRecord,catalogNumber,family,genus,specificEpithet,scientificNameAuthorship,recordedBy,recordNumber,day,month,year,country,higherGeography,locality,latitude,longitude,coordinateUncertaintyInMeters,establishmentMeans,geodeticDatum,georeferenceSources,habitat,maximumElevationInMeters,minimumElevationInMeters
-GBIF,,,,PRESERVED_SPECIMEN,,Fabaceae,Mimosa,mensicola,Barneby,Conceição C.A.,1224,,,1983,Brazil,"Mato Grosso do Sul, Corumbá",Fazenda Campina Grande - Bandalla.,-7.25775,-35.969633,5000,,,,,,

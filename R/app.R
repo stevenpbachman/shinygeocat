@@ -1,7 +1,7 @@
-
 geocatApp <- function(...) {
   #### ui ####
-  ui <- shiny::fluidPage(
+  ui <- fluidPage(
+    shinyjs::useShinyjs(),
     
     # set theme
     #theme = shinythemes::shinytheme("darkly"),
@@ -91,10 +91,10 @@ geocatApp <- function(...) {
                  shiny::textOutput("wcvp_selection"),
                  tags$hr(style="border-color: white;"),
                  
-                 shinyWidgets::materialSwitch(inputId = "Analysis", 
+                 shinyjs::disabled(shinyWidgets::materialSwitch(inputId = "Analysis", 
                                 label = "Analysis on/off", 
                                 value = FALSE,
-                                status = "success"),
+                                status = "success")),
                  
                  shiny::htmlOutput("res_title"),
                  shiny::htmlOutput("text"),
@@ -104,22 +104,24 @@ geocatApp <- function(...) {
                  # try the conditional panel to switch on when gbif points or csv loaded
                  #conditionalPanel(condition = "input.csv_in == true",
                  #conditionalPanel(condition = "input.csv_in == true",
-                 shinyWidgets::materialSwitch(
-                   inputId = "csv_onoff", 
-                   label = "User occurrences",
-                   #fill = TRUE, 
-                   value = FALSE,
-                   status = "info",
-                   right = TRUE
+                 shinyjs::disabled(
+                   shinyWidgets::materialSwitch(
+                     inputId = "csv_onoff", 
+                     label = "User occurrences",
+                     value = FALSE,
+                     status = "info",
+                     right = TRUE
+                   )
                  ),
                  
-                 shinyWidgets::materialSwitch(
-                   inputId = "gbif_onoff", 
-                   label = "GBIF occurrences",
-                   #fill = TRUE, 
-                   value = FALSE,
-                   status = "success",
-                   right = TRUE
+                 shinyjs::disabled(
+                   shinyWidgets::materialSwitch(
+                     inputId = "gbif_onoff", 
+                     label = "GBIF occurrences",
+                     value = FALSE,
+                     status = "success",
+                     right = TRUE
+                   )
                  ),
                  
                  br(),
@@ -197,6 +199,9 @@ geocatApp <- function(...) {
   
   ##### server
   server <- function(input, output, session) {
+    values <- reactiveValues(
+      analysis_data=tibble::tibble()
+    )
     
     # render the issues table for info
     # https://stackoverflow.com/questions/70155520/how-to-make-datatable-editable-in-r-shiny
@@ -224,7 +229,7 @@ geocatApp <- function(...) {
     output$wcvp_selection <- shiny::renderText(input$wcvp)
     
     # link to navpanel map
-    observeEvent(input$gotoAnalysis, {
+    shiny::observeEvent(input$gotoAnalysis, {
       shiny::updateTabsetPanel(session, "navGeoCAT",
                         selected = "map"
       )
@@ -260,21 +265,42 @@ geocatApp <- function(...) {
       shiny::validate(check_fields_(data, c("longitude", "latitude")))
       shiny::validate(check_numeric_(data, c("longitude", "latitude")))
       
+      values$analysis_data <-
+        rbind(
+          values$analysis_data,
+          data %>%
+            dplyr::select(longitude,latitude) %>%
+            dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
+            dplyr::filter(longitude < 180, longitude > -180,
+                          latitude < 90, latitude > -90) %>%
+            dplyr::mutate(source="csv")
+        )
+      
       data
     })
     
     # react to the GBIF search box being used
     # then trigger code to select best match and get occurrence data
-    gbifpointsInput <- shiny::eventReactive(list(input$GBIFname,input$GBIFmax), {
+    gbifpointsInput <- shiny::eventReactive(input$searchGBIF, {
       req(input$GBIFname)
       gbif_keys <- name_search(input$GBIFname)
       gbif_key <- gbif_keys$GBIF_key
-      get_gbif_points(gbif_key, input$GBIFmax)
+      gbif_points <- get_gbif_points(gbif_key, input$GBIFmax)
+      
+      values$analysis_data <-
+        rbind(
+          values$analysis_data,
+          gbif_points %>%
+            dplyr::select(longitude, latitude) %>%
+            dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
+            dplyr::filter(longitude < 180, longitude > -180,
+                          latitude < 90, latitude > -90) %>%
+            dplyr::mutate(source="gbif")
+        )
+      
+      gbif_points
       
     })
-    
-    
-    
     
     # leaflet base output map
     output$mymap <- leaflet::renderLeaflet({
@@ -333,7 +359,6 @@ geocatApp <- function(...) {
             "Open Topo Map",
             "ESRI Open Street map"
           ),
-          #overlayGroups = c("User points", "GBIF points"),
           options = leaflet::layersControlOptions(collapsed = FALSE)
         )
       
@@ -358,6 +383,13 @@ geocatApp <- function(...) {
       if (! is.null(msg)) {
         msg
       }
+    })
+    
+    
+    shiny::observeEvent(input$csv_in, {
+      shinyjs::enable("Analysis")
+      shinyjs::enable("csv_onoff")
+      shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
     })
     
     shiny::observeEvent(input$csv_in, {
@@ -397,27 +429,20 @@ geocatApp <- function(...) {
                          stroke = T,
                          fillOpacity = 1,
                          fill = T,
-                         fillColor = "#0070ff") #%>%
-      
-      # add convex hull to illustrate EOO
-      #addPolygons(hulls <- data %>%
-      #              st_as_sf(thepoints, coords = c("longitude", "latitude"), crs = 4326) %>%
-      #              geometry = st_combine( geometry )  %>%
-      #              st_convex_hull())  
-      
-      
+                         fillColor = "#0070ff")
+    })
+    
+    shiny::observeEvent(input$searchGBIF, {
+      shinyjs::enable("Analysis")
+      shinyjs::enable("gbif_onoff")
+      shinyWidgets::updateMaterialSwitch(session, "gbif_onoff", value=TRUE)
     })
     
     # proxy map to add gbif points
     shiny::observeEvent(input$searchGBIF,{
-      
       leaflet::leafletProxy("mymap", data = gbifpointsInput()) %>%
-        
-        #clearMarkers() %>%
-        
         # zoom to fit - can we buffer this a little?
         leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-        
         # add markers from the data
         leaflet::addCircleMarkers(group = "View Points",
                          lng = ~longitude,
@@ -427,51 +452,43 @@ geocatApp <- function(...) {
                          stroke = T,
                          fillOpacity = 1,
                          fill = T,
-                         fillColor = "#008000") #%>%
-      
-      # add convex hull to illustrate EOO
-      #addPolygons(hulls <- data %>%
-      #              st_as_sf(thepoints, coords = c("longitude", "latitude"), crs = 4326) %>%
-      #              geometry = st_combine( geometry )  %>%
-      #              st_convex_hull())  
-      
+                         fillColor = "#008000")
       
     })
     
     #output to analysis on/off switch
-    switchon = shiny::eventReactive(input$Analysis, {
-      
-      # catch when either one or both data inputs exist
-      # if else?
-      
-      if (input$Analysis == "TRUE"){
-        thedata = csvpointsInput()
+    calculateAnalyisis <- eventReactive(list(input$Analysis, input$gbif_onoff, input$csv_onoff), {
+
+      if (input$Analysis) {
+        d <- values$analysis_data
+        if (!input$gbif_onoff) {
+          d <- dplyr::filter(d, source != "gbif")
+        }
         
-        lldata = thedata %>%
-          dplyr::select(longitude,latitude) %>%
-          dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
-          dplyr::filter(longitude < 180, longitude > -180,
-                        latitude < 90, latitude > -90)
+        if (!input$csv_onoff) {
+          d <- dplyr::filter(d, source != "csv")
+        }
         
-        theEOO = red::eoo(lldata)
-        theAOO = red::aoo(lldata)
+        if (nrow(d) == 0)  {
+          return()
+        }
+        
+        d <- dplyr::select(d, -source)
+        
+        EOO <- red::eoo(d)
+        AOO <- red::aoo(d)
         
         str1 <-
           paste("Extent of occurrence (EOO): ",
-                format(round(as.numeric(theEOO)), big.mark = ","),
+                format(round(as.numeric(EOO)), big.mark = ","),
                 "(km squared)")
         str2 <-
           paste("Area of occupancy (AOO): ",
-                format(round(as.numeric(theAOO)), big.mark = ","),
+                format(round(as.numeric(AOO)), big.mark = ","),
                 "(km squared)")
         HTML(paste(str1, str2, sep = '<br>')
-        )#, icon = icon("exclamation-circle"),
-        #str2, icon = icon("exclamation-circle"),
-        #sep = '<br>'))
-        
-      } else
-      {}
-      
+        )
+      }
     })
     
     # render the output of the EOO and AOO results
@@ -479,14 +496,14 @@ geocatApp <- function(...) {
       HTML(paste0("<b>", "Results:", "</b>"))
     })
     
-    output$text <- shiny::renderUI({
-      switchon()
+    output$text <- renderUI({
+      calculateAnalyisis()
     })
     
     # make a polygon from imported csv points
     polyInput = shiny::reactive({
       df <- csvpointsInput()
-      #df = csv_temp 
+      
       poly <- df %>%
         dplyr::filter(if_all(c(longitude, latitude), ~!is.na(.))) %>%
         dplyr::filter(longitude > -180, longitude < 180, 
@@ -499,13 +516,10 @@ geocatApp <- function(...) {
     # proxy map to add polygon
     shiny::observeEvent(input$Analysis, {
       
-      if (input$Analysis == "TRUE"){
+      if (input$Analysis){
         
+
         leaflet::leafletProxy("mymap",data = polyInput()) %>%
-          
-          # clear previous polygons
-          #clearShapes() %>%
-          
           # add polygons input from csv
           leaflet::addPolygons(
             color = "#000000",
@@ -517,8 +531,7 @@ geocatApp <- function(...) {
         
         # TO DO - add AOO cells?
       } else {
-        leaflet::leafletProxy("mymap",data = polyInput()) %>%
-          
+        leaflet::leafletProxy("mymap", data=polyInput()) %>%
           # clear previous polygons
           leaflet::clearShapes()
       }

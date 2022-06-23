@@ -41,7 +41,7 @@ name_search_gbif = function (name) {
   default_tbl = gbif_name_tbl_(name)
   
   # search using verbose to get fuzzy alternatives
-  matches = name_backbone_verbose(
+  matches = rgbif::name_backbone_verbose(
     name = name,
     #rank = 'species', # restrict to species?
     kingdom = 'Plantae',
@@ -49,7 +49,7 @@ name_search_gbif = function (name) {
   )
   
   # bind together in case there are missing data
-  matches = bind_rows(matches$alternatives, matches$data)
+  matches = dplyr::bind_rows(matches$alternatives, matches$data)
   
   no_match = all(matches$matchType == "NONE")
   all_higher = all(matches$matchType == "HIGHERRANK")
@@ -65,8 +65,8 @@ name_search_gbif = function (name) {
     
     results$searchName = name
     
-    results = select(results, colnames(default_tbl))
-    results = arrange(results, desc(.data$confidence))
+    results = dplyr::select(results, colnames(default_tbl))
+    results = dplyr::arrange(results, desc(.data$confidence))
   }
   
   results
@@ -78,7 +78,7 @@ name_search_gbif = function (name) {
 #'
 #' @noRd
 gbif_name_tbl_ = function(query) {
-  tibble(
+  tibble::tibble(
     searchName = query,
     usageKey = NA_integer_,
     scientificName = NA_character_,
@@ -144,21 +144,21 @@ name_search = function(name, homosyn_replace = F){
   }
   
   # second search - plug search results into KNMS to get match against Kew names lists
-  knms_check = match_knms(gbif_result$scientificName)
-  knms_check = tidy(knms_check)
+  knms_check = kewr::match_knms(gbif_result$scientificName)
+  knms_check = kewr::tidy(knms_check)
   
   # join up the results
-  gbif_knms = left_join(gbif_result, knms_check, by=c("scientificName"="submitted"))
+  gbif_knms = dplyr::left_join(gbif_result, knms_check, by=c("scientificName"="submitted"))
   
   # check if there were ANY matches in KNMS - if not return GBIF
   if (!any(gbif_knms$matched)) {
     
     # and filter on maximum confidence from GBIF search
     # ensures there is only one result
-    gbif_knms = slice_max(gbif_knms, .data$confidence, n=1)
+    gbif_knms = dplyr::slice_max(gbif_knms, .data$confidence, n=1)
     
     # return only the GBIF results
-    results = rename(gbif_knms,
+    results = dplyr::rename(gbif_knms,
                      GBIF_key = usageKey,
                      GBIF_name = scientificName,
                      GBIF_rank = rank,
@@ -174,30 +174,30 @@ name_search = function(name, homosyn_replace = F){
   }
   
   # filter only on those that matched KNMS
-  gbif_knms = filter(gbif_knms, .data$matched == "TRUE")
+  gbif_knms = dplyr::filter(gbif_knms, .data$matched == "TRUE")
   
   # remove duplicates if KNMS matched more than one
-  gbif_knms = distinct(gbif_knms, .data$ipni_id, .keep_all = TRUE)
+  gbif_knms = dplyr::distinct(gbif_knms, .data$ipni_id, .keep_all = TRUE)
   
   # and filter on maximum confidence from GBIF search
   # ensures there is only one result
-  gbif_knms = slice_max(gbif_knms, .data$confidence, n=1)
+  gbif_knms = dplyr::slice_max(gbif_knms, .data$confidence, n=1)
   
   # third search - check WCVP status
-  wcvp_check = lookup_wcvp(gbif_knms$ipni_id)
-  wcvp_check = tidy(wcvp_check)
+  wcvp_check = kewr::lookup_wcvp(gbif_knms$ipni_id)
+  wcvp_check = kewr::tidy(wcvp_check)
   
   # get taxonomic status and names
-  wcvp_check = select(wcvp_check, .data$id, .data$status, .data$name, .data$authors)
+  wcvp_check = dplyr::select(wcvp_check, .data$id, .data$status, .data$name, .data$authors)
   
   # check if homotypic synonym and if user wants to replace with accepted
   if (homosyn_replace & wcvp_check$status == "homotypic synonym") {
     
-    wcvp_check = lookup_wcvp(wcvp_check$id)
+    wcvp_check = kewr::lookup_wcvp(wcvp_check$id)
     acc = paste(wcvp_check$accepted$name, wcvp_check$accepted$author, sep = " ")
     
     results = name_search(acc)
-    results = mutate(results, searchName = name)
+    results = dplyr::mutate(results, searchName = name)
     
     return(results)
     
@@ -208,10 +208,10 @@ name_search = function(name, homosyn_replace = F){
   wcvp_check = tidyr::unite(wcvp_check, name, c(name, authors), sep = " ")
   
   # join up results again
-  results = left_join(gbif_knms, wcvp_check, by=c("ipni_id"="id"))
+  results = dplyr::left_join(gbif_knms, wcvp_check, by=c("ipni_id"="id"))
   
   # rename the results for clarity
-  results = rename(results, GBIF_key = usageKey,
+  results = dplyr::rename(results, GBIF_key = usageKey,
                    GBIF_name = scientificName,
                    GBIF_rank = rank,
                    GBIF_confidence = confidence,
@@ -231,7 +231,7 @@ name_search = function(name, homosyn_replace = F){
 #'
 #' @noRd
 name_tbl_ = function(query) {
-  tibble(
+  tibble::tibble(
     searchName = query,
     GBIF_key = NA_integer_,
     GBIF_name = NA_character_,
@@ -254,7 +254,7 @@ get_gbif_points = function(key, gbif_limit) {
                        #BINOMIAL="scientificName",
                        CATALOG_NO="catalogNumber")
   
-  results = tibble(
+  results = tibble::tibble(
     basisOfRecord = NA_character_,
     scientificName = NA_character_,
     decimalLatitude = -999,
@@ -278,7 +278,7 @@ get_gbif_points = function(key, gbif_limit) {
   )
   
   if (key != "" & ! is.na(key)) {
-    gbif_results <- occ_data(
+    gbif_results <- rgbif::occ_data(
       taxonKey = key,
       hasGeospatialIssue = FALSE,
       hasCoordinate = TRUE,
@@ -306,8 +306,8 @@ get_gbif_points = function(key, gbif_limit) {
     gbif_points$SOURCE = paste0("https://www.gbif.org/dataset/", gbif_points$datasetKey, sep = "")
     
     # reformat to iucn standard
-    gbif_points = mutate(gbif_points,
-                         basisOfRecord=recode(basisOfRecord,
+    gbif_points = dplyr::mutate(gbif_points,
+                         basisOfRecord=dplyr::recode(basisOfRecord,
                                               "FOSSIL_SPECIMEN"="FossilSpecimen",
                                               "HUMAN_OBSERVATION"="HumanObservation",
                                               "LITERATURE"="",
@@ -318,10 +318,10 @@ get_gbif_points = function(key, gbif_limit) {
                                               "UNKNOWN"="Unknown"
                          ))
     
-    results = select(gbif_points, colnames(results))
+    results = dplyr::select(gbif_points, colnames(results))
   }
   
-  results <- rename(results, !!! result_name_map)
+  results <- dplyr::rename(results, !!! result_name_map)
   return(results)
 }
 
