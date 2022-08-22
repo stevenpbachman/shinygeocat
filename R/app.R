@@ -458,34 +458,15 @@ geocatApp <- function(...) {
     
     #output to analysis on/off switch
     calculateAnalyisis <- eventReactive(list(input$Analysis, input$gbif_onoff, input$csv_onoff), {
-
-      if (input$Analysis) {
-        d <- values$analysis_data
-        if (!input$gbif_onoff) {
-          d <- dplyr::filter(d, source != "gbif")
-        }
-        
-        if (!input$csv_onoff) {
-          d <- dplyr::filter(d, source != "csv")
-        }
-        
-        if (nrow(d) == 0)  {
-          return()
-        }
-        
-        d <- dplyr::select(d, -source)
-        
-        EOO <- red::eoo(d)
-        AOO <- red::aoo(d)
-        
+        if (input$Analysis) {
         str1 <-
           paste("Extent of occurrence (EOO): ",
-                format(round(as.numeric(EOO)), big.mark = ","),
-                "(km squared)")
+                format(round(as.numeric(values$eooarea)), big.mark = ","),
+                "km<sup>2</sup>")
         str2 <-
           paste("Area of occupancy (AOO): ",
-                format(round(as.numeric(AOO)), big.mark = ","),
-                "(km squared)")
+                format(round(as.numeric(values$aooarea)), big.mark = ","),
+                "km<sup>2</sup>")
         HTML(paste(str1, str2, sep = '<br>')
         )
       }
@@ -500,40 +481,56 @@ geocatApp <- function(...) {
       calculateAnalyisis()
     })
     
-    # make a polygon from imported csv points
-    polyInput = shiny::reactive({
-      df <- csvpointsInput()
-      
-      poly <- df %>%
-        dplyr::filter(if_all(c(longitude, latitude), ~!is.na(.))) %>%
-        dplyr::filter(longitude > -180, longitude < 180, 
-                      latitude > -90, latitude < 90) %>%
-        sf::st_as_sf(coords = c("longitude", "latitude"), crs = 4326) %>%
-        sf::st_combine()  %>%
-        sf::st_convex_hull()  
-    })
-    
-    # proxy map to add polygon
     shiny::observeEvent(input$Analysis, {
       
       if (input$Analysis){
         
-
-        leaflet::leafletProxy("mymap",data = polyInput()) %>%
-          # add polygons input from csv
+        #analysis here
+        d <- values$analysis_data
+        if (!input$gbif_onoff) {
+          d <- dplyr::filter(d, source != "gbif")
+        }
+        if (!input$csv_onoff) {
+          d <- dplyr::filter(d, source != "csv")
+        }
+        if (nrow(d) == 0)  {
+          return()
+        }
+        d <- dplyr::select(d, -source)#is this needed or is it the above needed, I think they are doing the same thing
+        #JMJJMJMJMJM
+        #project the data so we can work on it in a sensible space for areas and distance
+        projp <- simProjWiz(d)
+        EOO <- eoosh(projp)
+        AOO <- aoosh(projp)
+        values$eooarea <- EOO$area
+        values$aooarea <- AOO$area
+        #JMJMJMMJ
+        leaflet::leafletProxy("mymap",data = AOO$polysf) %>%
           leaflet::addPolygons(
             color = "#000000",
             stroke = T,
-            weight = 3,
-            fillOpacity = 0.4,
+            weight = 2,
+            fillOpacity = 0.3,
             fill = T,
-            fillColor = "#999999")
+            fillColor = "red",
+            group = "AOOpolys")
+        
+        leaflet::leafletProxy("mymap",data = EOO$polysf) %>%
+          leaflet::addPolygons(
+            color = "#000000",
+            stroke = T,
+            weight = 2,
+            fillOpacity = 0.2,
+            fill = T,
+            fillColor = "green")
         
         # TO DO - add AOO cells?
       } else {
-        leaflet::leafletProxy("mymap", data=polyInput()) %>%
+
+        leaflet::leafletProxy("mymap") %>%
           # clear previous polygons
           leaflet::clearShapes()
+
       }
       
     })
