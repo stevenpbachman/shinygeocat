@@ -40,10 +40,10 @@ eoosh <- function(points) {
     stop("Point coordinates must be supplied in columns named 'X' and 'Y'.")
   }
   
-  hull_idx <- chull(points)
+  hull_idx <- grDevices::chull(points)
   hull <- points[hull_idx,]
   
-  area <- polyarea(x=hull$X, y=hull$Y)
+  area <- pracma::polyarea(x=hull$X, y=hull$Y)
   # hull is constructed backwards, so area is negative and in m^2
   area <- -1 * area / 1e6
   
@@ -51,11 +51,11 @@ eoosh <- function(points) {
   p1 <- matrix(c(hull$X,hull$Y),ncol=2)
   #close it 
   p1 <- rbind(p1,c(hull[1,]$X,hull[1,]$Y))
-  p1 <- st_polygon(list(p1))
+  p1 <- sf::st_polygon(list(p1))
   #set projection
-  p1 <- st_sfc(p1, crs = attr(points,'crs'))
+  p1 <- sf::st_sfc(p1, crs = attr(points,'crs'))
   #to geographic
-  p1 <- st_transform(p1,4326)
+  p1 <- sf::st_transform(p1,4326)
   
  list(area = area,polysf = p1)
   
@@ -124,7 +124,7 @@ aoosh <- function(thepoints, cellsize=2000, returnV="S"){
   
   area <- (nrow(cellp) * (cellsize^2)/1000000)
   p1 <- buildCells(cellp, cellsize, 0, 0, 0, attr(thepoints,'crs'))
-  p1 <- st_transform(p1,4326)
+  p1 <- sf::st_transform(p1,4326)
   #print("AOO")
   return (list(area = area, polysf=p1))
   # if (returnV == "SF") {
@@ -254,7 +254,7 @@ buildCells <- function (llcorners, cellsize, rot=0, shiftx=0, shifty=0, crs=""){
   do.call(c, poly_list)
 }
 
-
+?split
 #' Construct a polygon from vertices.
 #' 
 #' Accepts an x and a y vector to define the vertices of
@@ -268,16 +268,16 @@ constructPolygon <- function(x, y, crs){
     points <- rbind(points, points[1,])  
   }
   
-  geom <- st_polygon(list(points))
+  geom <- sf::st_polygon(list(points))
   
   # put geometry into an sfc so we can attach a crs
   if (is.null(crs)) {
     crs <- ""
   }
   
-  polygon <- st_sfc(geom, crs=crs)
+  polygon <- sf::st_sfc(geom, crs=crs)
   
-  if (is.na(st_crs(polygon))) {
+  if (is.na(sf::st_crs(polygon))) {
     warning("No valid CRS provided so setting it to `NA`")
   }
   

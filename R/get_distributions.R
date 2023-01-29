@@ -8,11 +8,11 @@ library(readr)
 #TDWG_LEVEL3 <- read_rds(here("R/tdwg_level3.rds"))
 
 # get native geom
-native_geom = function(long_name){
+native_geom = function(ID){
   
-  ID <- wcvp_data %>%
-  dplyr::filter(taxon_name_authors == long_name) %>%
-  dplyr::select(ipni_id)
+  #ID <- wcvp_data %>%
+  #dplyr::filter(taxon_name_authors == long_name) %>%
+  #dplyr::select(ipni_id)
   
   native_powo = get_native_range(ID)
   
@@ -23,7 +23,7 @@ native_geom = function(long_name){
   
 }
 
-# lookup POWO
+
 lookup_powo_old <- function(ID, distribution=FALSE) {
   lookup_url <- paste("http://plantsoftheworldonline.org/api/1/taxon/urn:lsid:ipni.org:names:", ID, sep="")
   if (distribution) {
@@ -31,11 +31,11 @@ lookup_powo_old <- function(ID, distribution=FALSE) {
   } else {
     response <- httr::GET(lookup_url)
   }
-  
+
   if (! httr::http_error(response)) {
     return(fromJSON(content(response, as="text")))
   }
-  return(NULL)  
+  return(NULL)
 }
 
 # pull back native range codes
