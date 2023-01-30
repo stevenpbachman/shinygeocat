@@ -96,14 +96,14 @@ server <- function(input, output, session) {
       shiny::validate("Invalid file; please upload a .csv file")
     }
     
-    shiny::validate(check_fields_(data, c("longitude", "latitude")))
+    shiny::validate(check_fields_(data, c("longitude", "latitude", "id")))
     shiny::validate(check_numeric_(data, c("longitude", "latitude")))
     
     values$analysis_data <-
       rbind(
         values$analysis_data,
         data %>%
-          dplyr::select(longitude,latitude) %>%
+          dplyr::select(longitude,latitude, id) %>%
           dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
           dplyr::filter(longitude < 180, longitude > -180,
                         latitude < 90, latitude > -90) %>%
@@ -216,7 +216,9 @@ powo_range <- shiny::eventReactive(input$powo_id, {
   
   shiny::observeEvent(input$csv_in, {
     
-    leaflet::leafletProxy("mymap", data=csvpointsInput()) %>%
+    df <- csvpointsInput()
+    
+    leaflet::leafletProxy("mymap", data=df) %>%
       
       # zoom to fit - can we buffer this a little?
       leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
@@ -229,7 +231,8 @@ powo_range <- shiny::eventReactive(input$powo_id, {
                                 stroke = T,
                                 fillOpacity = 1,
                                 fill = T,
-                                fillColor = "#0070ff")
+                                fillColor = "#0070ff",
+                                popup = as.character(df$id))
   })
   
   #output to analysis on/off switch
