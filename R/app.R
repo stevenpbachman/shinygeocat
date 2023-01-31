@@ -53,7 +53,7 @@ geocatApp <- function(...) {
         column(
           12,
           align = "centre",
-          shiny::helpText("Upload a CSV with 'longitude' and 'latitude' fields"),
+          shiny::helpText("Upload a CSV with a unique 'id' and 'longitude', 'latitude' fields "),
           shiny::fileInput(
             "csv_in",
             NULL,
@@ -63,14 +63,34 @@ geocatApp <- function(...) {
         ),
       ),
       
-      shiny::fluidRow(column(
-        12, align = "center", 
-        shiny::helpText("Enter POWO ID"),
-        shiny::textInput("powo_id", "")
+      fluidRow(
+        column(8, align="left",
+               tags$h5("Enter a POWO ID:")
         )
       ),
+      
+      shiny::fluidRow(
+        column(
+          8, align = "center", 
+          shiny::textInput("powo_id", label = NULL, placeholder = "68179-1")
+        ),
+        column(
+          4, align = "center", 
+          actionButton("queryPOWO", "load map")
+        )
+      ),
+      
+      
+      br(),
+      br(),
+      
+      fluidRow(
+        column(
+          12, align="center", 
+          downloadButton('download', "Download SIS point file")
+        )
+      )
     ),
-    
 
   #### Main panel for displaying outputs ####
   
@@ -206,14 +226,20 @@ powo_range <- shiny::eventReactive(input$powo_id, {
   
   # shiny::observeEvent(input$powo_id, {
   # 
-  #   leaflet::leafletProxy("mymap", data=powo_range()) %>%
+  #   nat_range = powo_range()  %>%
+  # 
+  #   leaflet::leafletProxy("mymap", data = nat_range) %>%
   # 
   #     # zoom to fit - can we buffer this a little?
   #     #leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
   # 
-  #     leaflet::addPolygons()
+  #   addPolygons(
+  #     data = nat_range$geometry,
+  #     color = "black",
+  #     weight = 1,
+  #     fillColor = "yellow") 
   # })
-  
+
   shiny::observeEvent(input$csv_in, {
     
     df <- csvpointsInput()
@@ -259,6 +285,25 @@ powo_range <- shiny::eventReactive(input$powo_id, {
   output$text <- renderUI({
     calculateAnalyisis()
   })
+  
+  # point file download handler
+  output$download = downloadHandler(
+    filename = function(){
+      date <- format(Sys.Date(), "%Y%m%d")
+      species_name <- "SIS_points"
+      paste(species_name, "_", date, ".csv", sep = "" )
+    },
+    content = function(file){
+      df = csvpointsInput()
+      # merge with sis format
+      df = dplyr::bind_cols(df,sis_format)
+      df$dec_lat <- df$latitude
+      df$dec_long <- df$longitude
+      #df <- df |> 
+      #  dplyr::select(-c(latitude, longitude))
+      write_csv(df, file)
+    }
+  )
   
   shiny::observeEvent(input$Analysis, {
     

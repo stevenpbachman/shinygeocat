@@ -254,7 +254,7 @@ buildCells <- function (llcorners, cellsize, rot=0, shiftx=0, shifty=0, crs=""){
   do.call(c, poly_list)
 }
 
-?split
+#?split
 #' Construct a polygon from vertices.
 #' 
 #' Accepts an x and a y vector to define the vertices of
@@ -283,3 +283,24 @@ constructPolygon <- function(x, y, crs){
   
   polygon
 }
+
+
+sis_format = tibble::tibble(
+  basisofrec = NA_character_,
+  sci_name = NA_character_,
+  dec_lat = -999,
+  dec_long = -999,
+  event_year = -999L,
+  catalog_no = NA_character_,
+  spatialref = "WGS84",
+  presence = "1",
+  origin = "1",
+  seasonal = "1",
+  data_sens = "No",
+  source = NA_character_,
+  yrcompiled = NA_character_,
+  compiler = NA_character_,
+  citation = NA_character_,
+  recordedby = NA_character_,
+  recordno = NA_character_
+)

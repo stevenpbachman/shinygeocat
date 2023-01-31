@@ -52,12 +52,12 @@ get_native_range = function(ID){
   returned_data <- lookup_powo_old(ID, distribution=TRUE)
   distribution <- returned_data$distributions
   distribution <- distribution %>%
-    filter(establishment == "Native")
+    dplyr::filter(establishment == "Native")
   
   if (! is.null(distribution)) {
     results = dplyr::mutate(distribution, POWO_ID=ID)
     results = dplyr::rename(results, LEVEL3_NAM=name, LEVEL3_COD=tdwgCode)
-    results = dplyr::mutate(results, LEVEL3_NAM=recode(LEVEL3_NAM, "á"="a"))
+    results = dplyr::mutate(results, LEVEL3_NAM=dplyr::recode(LEVEL3_NAM, "á"="a"))
   }
   
   return(results)
