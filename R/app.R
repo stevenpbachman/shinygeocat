@@ -1,16 +1,25 @@
 geocatApp <- function(...) {
   #### ui ####
   ui <- fluidPage(
+    
     shinyjs::useShinyjs(),
+    
+    tags$html(lang = "en"),
     
     # title
     titlePanel("GeoCAT - Geospatial Conservation Assessment Tool"),
+    tags$head(tags$title("GeoCAT - Geospatial Conservation Assessment Tool")), # WCAG modification
     
     # set theme
     theme = shinythemes::shinytheme("darkly"),
     
     # Sidebar panel for inputs
     shiny::sidebarPanel(
+      
+      p("This is a simple version of the GeoCAT app.", "It currenlty does not have functionality to add GBIF data or edit points."),
+      
+      br(),
+      
       # sidebar ----
       shinyjs::disabled(
         shinyWidgets::materialSwitch(
@@ -65,7 +74,7 @@ geocatApp <- function(...) {
       
       fluidRow(
         column(8, align="left",
-               tags$h5("Enter a POWO ID:")
+               tags$h5("Enter a POWO ID for a native range map:")
         )
       ),
       
@@ -139,7 +148,7 @@ powo_range <- shiny::eventReactive(input$powo_id, {
   
   # leaflet base output map ----
   output$mymap <- leaflet::renderLeaflet({
-    leaflet::leaflet() %>%
+    leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 2)) %>%
       
       leaflet::setView(lng = 0,
                        lat = 0,
@@ -224,21 +233,21 @@ powo_range <- shiny::eventReactive(input$powo_id, {
     shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
   })
   
-  # shiny::observeEvent(input$powo_id, {
-  # 
-  #   nat_range = powo_range()  %>%
-  # 
-  #   leaflet::leafletProxy("mymap", data = nat_range) %>%
-  # 
-  #     # zoom to fit - can we buffer this a little?
-  #     #leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-  # 
-  #   addPolygons(
-  #     data = nat_range$geometry,
-  #     color = "black",
-  #     weight = 1,
-  #     fillColor = "yellow") 
-  # })
+  shiny::observeEvent(input$queryPOWO, {
+
+    nat_range = powo_range()  %>%
+
+    leaflet::leafletProxy("mymap", data = nat_range) %>%
+
+      # zoom to fit - can we buffer this a little?
+      #leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
+
+    addPolygons(
+      data = nat_range$geometry,
+      color = "black",
+      weight = 1,
+      fillColor = "yellow")
+  })
 
   shiny::observeEvent(input$csv_in, {
     
@@ -279,11 +288,11 @@ powo_range <- shiny::eventReactive(input$powo_id, {
   
   # render the output of the EOO and AOO results
   output$res_title <- shiny::renderUI({
-    HTML(paste0("<b>", "Results:", "</b>"))
+    HTML(paste0("<b style='color:orange;'>", "Results:", "</b>"))
   })
   
   output$text <- renderUI({
-    calculateAnalyisis()
+    HTML(paste0("<p style='color:orange;'>", calculateAnalyisis(), "</p>"))
   })
   
   # point file download handler
