@@ -142,9 +142,9 @@ server <- function(input, output, session) {
     data
   })
   
-powo_range <- shiny::eventReactive(input$powo_id, {
-  nat_range <- native_geom(input$powo_id)
-})
+  powo_range <- shiny::eventReactive(input$powo_id, {
+    native_geom(input$powo_id)
+  })
   
   # leaflet base output map ----
   output$mymap <- leaflet::renderLeaflet({
@@ -235,18 +235,18 @@ powo_range <- shiny::eventReactive(input$powo_id, {
   
   shiny::observeEvent(input$queryPOWO, {
 
-    nat_range = powo_range()  %>%
+    #bbox_coords <- sf::st_bbox(powo_range()) 
 
-    leaflet::leafletProxy("mymap", data = nat_range) %>%
-
-      # zoom to fit - can we buffer this a little?
-      #leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-
-    addPolygons(
-      data = nat_range$geometry,
-      color = "black",
-      weight = 1,
-      fillColor = "yellow")
+      leaflet::leafletProxy("mymap") %>%
+        
+        leaflet::addPolygons(
+          data = powo_range(),
+          color = "red",
+          weight = 2,
+          fillColor = "red") #%>%
+     
+    # trying to get it to zoom to the range polygon   
+    #leaflet::fitBounds(lng1 = bbox_coords[1], lat1 = bbox_coords[2], lng2 = bbox_coords[3], lat2 = bbox_coords[4])
   })
 
   shiny::observeEvent(input$csv_in, {
