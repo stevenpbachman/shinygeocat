@@ -5,7 +5,10 @@ account: spbachman
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 5908463
-bundleId: 6032281
+bundleId: 6228596
 url: https://spbachman.shinyapps.io/geocat_staging/
-when: 1655905839.54213
-lastSyncTime: 1655905839.54213
+when: 1661243438.76297
+lastSyncTime: 1661243438.76297
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: docs/dev_hire_specs.xlsx|docs/occ_fields_translator.xlsx
