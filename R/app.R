@@ -7,8 +7,8 @@ geocatApp <- function(...) {
     tags$html(lang = "en"),
     
     # title
-    titlePanel("GeoCAT - Geospatial Conservation Assessment Tool"),
-    tags$head(tags$title("GeoCAT - Geospatial Conservation Assessment Tool")), # WCAG modification
+    titlePanel("ShinyGeoCAT - Geospatial Conservation Assessment Tools"),
+    tags$head(tags$title("ShinyGeoCAT  - Geospatial Conservation Assessment Tools")), # WCAG modification
     
     # set theme
     theme = shinythemes::shinytheme("darkly"),
@@ -18,6 +18,8 @@ geocatApp <- function(...) {
       
       p("This is a simple version of the GeoCAT app.", "It currenlty does not have functionality to add GBIF data or edit points."),
       
+      
+      p("Moat, J., Bachman, S., & Walker, B. (2023). GeoCAT - Geospatial Conservation Assessment Tools (BETA) [Software]. Available from https://spbachman.shinyapps.io/geocat_staging/"),
       br(),
       
       # sidebar ----
@@ -89,6 +91,7 @@ geocatApp <- function(...) {
         )
       ),
       
+      tags$a(href="https://powo.science.kew.org/", "Search POWO to get accepted name ID", target="_blank"),
       
       br(),
       br(),
@@ -213,7 +216,7 @@ server <- function(input, output, session) {
       data
     }
     msg <- c(
-      check_complete_(data, c("longitude", "latitude")),
+      check_complete_(data, c("longitude", "latitude", "id")),
       check_range_(data, "longitude", -180, 180),
       check_range_(data, "latitude", -90, 90),
       check_rounded_(data, "longitude"),
@@ -235,19 +238,15 @@ server <- function(input, output, session) {
   
   shiny::observeEvent(input$queryPOWO, {
 
-    #bbox_coords <- sf::st_bbox(powo_range()) 
-
       leaflet::leafletProxy("mymap") %>%
         
         leaflet::addPolygons(
           data = powo_range(),
           color = "red",
           weight = 2,
-          fillColor = "red") #%>%
+          fillColor = "red") 
      
-    # trying to get it to zoom to the range polygon   
-    #leaflet::fitBounds(lng1 = bbox_coords[1], lat1 = bbox_coords[2], lng2 = bbox_coords[3], lat2 = bbox_coords[4])
-  })
+})
 
   shiny::observeEvent(input$csv_in, {
     
