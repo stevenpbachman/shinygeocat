@@ -1,0 +1,19 @@
+Justins notes
+
+WORK DONE
+
+#udpated POWO search to trap when you have no results, ugly but works
+#tweak map size to be same as left panel
+
+WORK NEEDED
+HIGH
+# User editable, moveable, delete point etc
+#GBIF query
+
+MEDIUM
+#Split polygon when over date line
+
+LOW
+# POWO search which returns nothing, need to inform user
+# POWO search clear off old searches (maybe a button)
+# Map to reproduce over date line (ie not say map data not available)

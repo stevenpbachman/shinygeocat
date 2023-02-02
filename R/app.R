@@ -39,7 +39,7 @@ geocatApp <- function(...) {
       
       br(),
       
-      # swich csv points on/off from map
+      # switch csv points on/off from map
       shinyjs::disabled(
         # csv points on/off ----
         shinyWidgets::materialSwitch(
@@ -108,7 +108,7 @@ geocatApp <- function(...) {
   
   shiny::mainPanel(#### main panel ####
                    leaflet::leafletOutput(# map ----
-                                          "mymap", width = "100%", height = 600))
+                                          "mymap", width = "100%", height = 650))
   )
 
 
