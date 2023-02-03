@@ -21,7 +21,7 @@ native_geom = function(ID){
   native_powo = get_native_range(ID)
   #JM trap entry with results, bit ugly to supply an empty geometry, but hey it works
   if (is.null(native_powo)){
-    print('no data returned from POWO search')
+    print('no data returned from POWO search')#need to return this validate 
     return(st_sf(st_sfc()))
     }
   
