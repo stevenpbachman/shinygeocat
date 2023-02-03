@@ -4,7 +4,7 @@ geocatApp <- function(...) {
   ui <- fluidPage(
     
     shinyjs::useShinyjs(),
-    
+   
     tags$html(lang = "en"),
     
     # title
@@ -80,7 +80,7 @@ geocatApp <- function(...) {
         column(
           12,
           align = "centre",
-          shiny::helpText("Upload a CSV with a unique 'id' and 'longitude', 'latitude' fields "),
+          shiny::helpText("Upload a CSV with at least 'longitude', 'latitude' fields "),
           shiny::fileInput(
             "csv_in",
             NULL,
@@ -152,9 +152,12 @@ geocatApp <- function(...) {
 
 ##### server #####
 server <- function(input, output, session) {
+  #JM builds an empty df to populate later
+  ################################
   values <- reactiveValues(
     analysis_data=empty_tbl_()
   )
+  values$analysis_data <- buildspdf()
   
   observeEvent(input$reset, {
       session$reload()
@@ -168,21 +171,27 @@ server <- function(input, output, session) {
     } else {
       shiny::validate("Invalid file; please upload a .csv file")
     }
-    
-    shiny::validate(check_fields_(data, c("longitude", "latitude", "id")))
+    ###########################################################
+    #ID not needed any more
+    #shiny::validate(check_fields_(data, c("longitude", "latitude","id")))
     shiny::validate(check_numeric_(data, c("longitude", "latitude")))
-    
-    values$analysis_data <-
-      dplyr::bind_rows(
-        values$analysis_data,
-        data %>%
+
+    csv_imported <- data %>%
           dplyr::select(longitude,latitude, id) %>%
           dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
           dplyr::filter(longitude < 180, longitude > -180,
                         latitude < 90, latitude > -90) %>%
-          dplyr::mutate(group="csv")
+          dplyr::mutate(
+            geocat_id=seq.int(nrow(values$analysis_data)),
+            geocat_source="csv import",
+          )
+          
+    values$analysis_data <-
+      dplyr::bind_rows(
+        values$analysis_data,
+        csv_imported
       )
-    
+
     data
   })
   
@@ -210,7 +219,7 @@ server <- function(input, output, session) {
       
       leaflet::setView(lng = 0,
                        lat = 0,
-                       zoom = 2) %>%
+                       zoom = 3) %>%
       
       leaflet.extras::addSearchOSM(options = leaflet.extras::searchOptions(
         autoCollapse = F,
@@ -220,7 +229,28 @@ server <- function(input, output, session) {
       )) %>%
       
       leaflet::addScaleBar(position = "bottomright") %>%
+      ######################################################
+      #JM
+      #df <- values$analysis_data
+      leaflet.extras::addDrawToolbar(editOptions = editToolbarOptions(edit=TRUE),
+                                     targetGroup = 'mappoints',
+                                     circleMarkerOptions=FALSE,
+                                     rectangleOptions=FALSE,
+                                     circleOptions=FALSE,
+                                     polygonOptions=FALSE,
+                                     polylineOptions=FALSE) %>%
       
+      leaflet::addCircleMarkers(data = values$analysis_data[values$analysis_data$geocat_use==TRUE,],
+                 popup = "popup",#~thetext,
+                 layerId = ~geocat_id,
+                 group="mappoints",
+                 radius = 7,
+                 color="#FFFFFF",
+                 stroke = T,
+                 fillColor = "#FF0000",
+                 fillOpacity = 1,
+                 options = markerOptions(draggable = FALSE)) %>%
+      #####################################################
       leaflet::addMeasure(
         position = "bottomleft",
         primaryLengthUnit = "meters",
@@ -233,12 +263,6 @@ server <- function(input, output, session) {
         provider = "Esri.WorldImagery",
         #provider$Esri.WorldImagery,
         group = "ESRI World Imagery (default)",
-        options = leaflet::providerTileOptions(noWrap = TRUE)
-      )  %>%
-      
-      leaflet::addProviderTiles(
-        provider = "Esri.WorldStreetMap",
-        group = "ESRI Open Street map",
         options = leaflet::providerTileOptions(noWrap = TRUE)
       )  %>%
       
@@ -258,33 +282,32 @@ server <- function(input, output, session) {
         baseGroups = c(
           "ESRI World Imagery",
           "Open Street Map",
-          "Open Topo Map",
-          "ESRI Open Street map"
+          "Open Topo Map"
         ),
         options = leaflet::layersControlOptions(collapsed = FALSE)
       )
     })
-  
-  output$csvValidation <- shiny::renderPrint({
+
+  shiny::observeEvent(input$leafmap_draw_new_feature, {
+    print("New Feature added")
+  })
+
+  output$validation <- shiny::renderPrint({
     data <- csvpointsInput()
     if (! is.data.frame(data)) {
       data
     }
     msg <- c(
-      check_complete_(data, c("longitude", "latitude", "id")),
-      check_range_(data, "longitude", -180, 180),
-      check_range_(data, "latitude", -90, 90),
+      #check_complete_(data, c("longitude", "latitude", "id")),
+      #check_range_(data, "longitude", -180, 180),
+      #check_range_(data, "latitude", -90, 90),
       check_rounded_(data, "longitude"),
-      check_rounded_(data, "latitude"),
-      check_zeros_(data, "longitude"),
-      check_zeros_(data, "latitude")
     )
-    
     if (! is.null(msg)) {
       msg
     }
   })
-  
+
   output$gbifValidation <- shiny::renderPrint({
     data <- gbifPointsInput()
     if (nrow(data) == 0) {
@@ -325,7 +348,9 @@ server <- function(input, output, session) {
 
   shiny::observeEvent(input$csv_in, {
     
-    df <- csvpointsInput()
+    df <- values$analysis_data
+    #needs cleaning up with formating and maybe more information
+    popuptext <- paste(df$geocat_id,df$sci_name,df$latitude,df$longitude)
     
     leaflet::leafletProxy("mymap", data=df) %>%
       
@@ -341,7 +366,7 @@ server <- function(input, output, session) {
                                 fillOpacity = 1,
                                 fill = T,
                                 fillColor = "#0070ff",
-                                popup = as.character(df$id))
+                                popup = as.character(popuptext))
   })
   
   shiny::observeEvent(input$queryGBIF, {
@@ -444,8 +469,33 @@ server <- function(input, output, session) {
   
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
     if (input$Analysis){
-        leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
-        leaflet::clearGroup("AOOpolys") %>%
+      #analysis here
+      #print(values$analysis_data)
+      d  <- data.frame(long=values$analysis_data$longitude,lat=values$analysis_data$latitude)
+      # if (!input$gbif_onoff) {
+      #   d <- dplyr::filter(d, source != "gbif")
+      # }
+      #if (!input$csv_onoff) {
+      #  d <- dplyr::filter(d, source != "csv")
+      #}
+      if (nrow(d) == 0)  {
+        return()
+      }
+      #d <- dplyr::select(d, -source)#is this needed or is it the above needed, I think they are doing the same thing
+      #JMJJMJMJMJM
+      #project the data so we can work on it in a sensible space for areas and distance
+      projp <- simProjWiz(d)
+      #reports projection need to sent this to validate
+      #
+      print (projp$crs)
+      EOO <- eoosh(projp$p)
+      AOO <- aoosh(projp$p)
+      values$eooarea <- EOO$area
+      values$aooarea <- AOO$area
+      values$eoo_rat <- ratingEoo(EOO$area,abb=TRUE)
+      values$aoo_rat <- ratingAoo(AOO$area,abb=TRUE)
+      #JMJMJMMJ
+      leaflet::leafletProxy("mymap",data = AOO$polysf) %>%
         leaflet::addPolygons(
           color = "#000000",
           stroke = T,

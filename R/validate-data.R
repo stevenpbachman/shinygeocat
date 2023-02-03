@@ -1,3 +1,51 @@
+#Function to setup empty dataframe for geoCAT to work with
+#JM
+#notes
+#geocat_source = where the data has come from (ie gbif, csv import, user defined)
+#geocat_id = an internal ID which is populated on import (ie 1:nrow), new points will be added to this with a nrow + _leaflet_id (_leaflet_id is a unique number from leaflet) this should allow me to use this id to query all on map edits/delete. The reason for odd allocation is that leaflet assigns its own unique values and I can’t find a way to update (read only), there is a possibility of a clash if,  I just increment ID and I may have get back out the leaflet ID as some point (not sure I do). I may simplify this later.
+#geocat_status = a record of what has happen to a point ie “new point”, “moved point”, “deleted point”
+#geocat_use = Flag to false it point is deleted (could query on above, but I feel this is quicker)?
+#geocat_analysis = Flag for any queries (ie GBIF only etc), which we can switch on or off depending on reactive # elements (ie your switches for GBIF/user)
+#geocat_notes = records what has happened the points when moved (ie moved from x,y to p,q)
+#note at this point #geocat_analysis is not used
+buildspdf <- function(){
+  df <- data.frame(BasisOfRec = as.character(),
+             EVENT_YEAR = as.integer(),
+             latitude = as.numeric(),
+             longitude = as.numeric(),
+             sci_name = as.character(),
+             PRESENCE = as.integer(),
+             ORIGIN = as.integer(),
+             SEASONAL = as.integer(),
+             CATALOG_NO = as.character(),
+             SPATIALREF = as.character(),
+             CITATION = as.character(),
+             COMPILER = as.character(),
+             recordno = as.character(),
+             recordedBy = as.character(),
+             yrcompiled = as.integer(),
+             DATA_SENS = as.logical(),
+             SOURCE = as.logical(),
+             dist_comm = as.logical(),
+             tax_comm = as.logical(),
+             #user specific
+             id = as.integer(),
+             #geocat specific fields
+             geocat_source = as.character(),
+             geocat_id = as.integer(),
+             geocat_status = as.character(),
+             geocat_use = as.logical(),
+             geocat_analysis = as.logical(),
+             geocat_notes = as.character()
+  )
+  #add some dummy data
+  mypoints <- data.frame(longitude = rnorm(4) + 46, latitude = rnorm(4) + -21, geocat_id = c(1:4),geocat_use=TRUE)
+  merge(df,mypoints, all=TRUE)
+  
+  
+}
+
+
 # Functions to validate occurrences and occurrence files
 
 check_fields_ <- function(df, required_fields) {
