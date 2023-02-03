@@ -98,8 +98,12 @@ geocatApp <- function(...) {
       
       fluidRow(
         column(
-          12, align="center", 
+          8, align="center", 
           downloadButton('download', "Download SIS point file")
+        ),
+        column(
+          4, align = "center", 
+          actionButton("reset", "Reset")
         )
       )
     ),
@@ -117,6 +121,11 @@ geocatApp <- function(...) {
 server <- function(input, output, session) {
   values <- reactiveValues(
     analysis_data=tibble::tibble()
+  )
+  
+  observeEvent(input$reset,{
+      session$reload()
+  }
   )
   
   # prepare the points
