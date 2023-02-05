@@ -72,7 +72,7 @@ simProjWiz <- function(thepoints,thecentre,returnV="S"){
   else {
     xy <- as.data.frame(st_coordinates(xysp))
     attr(xy,'crs') <- CRSstring
-    return(xy)
+    return(list(p=xy,crs=CRSstring))
   }
 }
 

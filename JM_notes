@@ -1,0 +1,28 @@
+Justins notes
+
+WORK DONE
+
+#udpated POWO search to trap when you have no results, ugly but works
+#tweak map size to be same as left panel
+
+WORK NEEDED
+HIGH
+# User editable, moveable, delete point etc
+# a.	geocat_id = an internal ID which is populated on import (ie 1:nrow), new points will be added to this with a nrow + _leaflet_id (_leaflet_id is a unique number from leaflet) this should allow me to use this id to query all on map edits/delete. The reason for odd allocation is that leaflet assigns its own unique values and I can’t find a way to update (read only), there is a possibility of a clash if,  I just increment ID and I may have get back out the leaflet ID as some point (not sure I do). I may simplify this later.
+#b.	geo_status = a record of what has happen to a point ie “new point”, “moved point”, “deleted point”
+#c.	geocat_use = Flag to false it point is deleted (could query on above, but I feel this is quicker)?
+#d.	geocat_analysis = Flag for any queries (ie GBIF only etc), which we can switch on or off depending on reactive # elements (ie your switches for GBIF/user)
+
+#GBIF query
+
+MEDIUM
+#Split polygon when over date line
+# add suggestted IUCN ratings linked to EOO and AOO values
+# return the projection used to the user?
+#colour points by data_source
+
+LOW
+# POWO search which returns nothing, need to inform user in the information box to the left (where steve reports missing values)
+# POWO search clear off old searches (maybe a button)
+# Map to reproduce over date line (ie not say map data not available)
+

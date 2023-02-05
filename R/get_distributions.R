@@ -1,3 +1,7 @@
+#JM added a quick and dirty trap for no results from search
+#JM need to give user a message for no results returned
+#JM also may (some times it could be useful!) need to clear off old polygons if user uses this more than once
+
 
 # old method until baz sorts it
 library(jsonlite)
@@ -15,6 +19,11 @@ native_geom = function(ID){
   #dplyr::select(ipni_id)
   
   native_powo = get_native_range(ID)
+  #JM trap entry with results, bit ugly to supply an empty geometry, but hey it works
+  if (is.null(native_powo)){
+    print('no data returned from POWO search')#need to return this validate 
+    return(st_sf(st_sfc()))
+    }
   
   # merge with TDWG to get native geom
   nat_dis <- merge(TDWG_LEVEL3, native_powo, by = "LEVEL3_COD")
@@ -48,17 +57,20 @@ get_native_range = function(ID){
     LEVEL3_NAM=NA_character_,
     POWO_ID=NA_character_
   )
-  
+
   returned_data <- lookup_powo_old(ID, distribution=TRUE)
+  
+  #JM this errors if user give no ID or an incorrect one, as returned_data is null###
+  if (is.null(returned_data)){return(NULL)}
+
   distribution <- returned_data$distributions
   distribution <- distribution %>%
     dplyr::filter(establishment == "Native")
-  
   if (! is.null(distribution)) {
     results = dplyr::mutate(distribution, POWO_ID=ID)
     results = dplyr::rename(results, LEVEL3_NAM=name, LEVEL3_COD=tdwgCode)
     results = dplyr::mutate(results, LEVEL3_NAM=dplyr::recode(LEVEL3_NAM, "á"="a"))
-  }
+  } 
   
   return(results)
 }
