@@ -39,7 +39,7 @@ geocatApp <- function(...) {
       
       br(),
       
-      # swich csv points on/off from map
+      # switch csv points on/off from map
       shinyjs::disabled(
         # csv points on/off ----
         shinyWidgets::materialSwitch(
@@ -48,14 +48,14 @@ geocatApp <- function(...) {
           value = FALSE,
           status = "info",
           right = TRUE
-        )
+        ),
+        shiny::fluidRow(column(
+          12, align = "center", verbatimTextOutput("validation")
+        ))
       ),
       
-      br(),
-      
-      shiny::fluidRow(column(
-        12, align = "center", verbatimTextOutput("validation")
-      )),
+
+
       
       br(),
       
@@ -112,10 +112,8 @@ geocatApp <- function(...) {
   
   shiny::mainPanel(#### main panel ####
                    leaflet::leafletOutput(# map ----
-                                          "mymap", width = "100%", height = 600))
+                                          "mymap", width = "100%", height = 650))
   )
-
-
 
 ##### server #####
 server <- function(input, output, session) {
@@ -284,11 +282,11 @@ server <- function(input, output, session) {
       str1 <-
         paste("Extent of occurrence (EOO): ",
               format(round(as.numeric(values$eooarea)), big.mark = ","),
-              "km<sup>2</sup>")
+              "km<sup>2</sup>","–",values$eoo_rat)
       str2 <-
         paste("Area of occupancy (AOO): ",
               format(round(as.numeric(values$aooarea)), big.mark = ","),
-              "km<sup>2</sup>")
+              "km<sup>2</sup>","–",values$aoo_rat)
       HTML(paste(str1, str2, sep = '<br>')
       )
     }
@@ -341,10 +339,15 @@ server <- function(input, output, session) {
       #JMJJMJMJMJM
       #project the data so we can work on it in a sensible space for areas and distance
       projp <- simProjWiz(d)
-      EOO <- eoosh(projp)
-      AOO <- aoosh(projp)
+      #reports projection need to sent this to validate
+      #
+      print (projp$crs)
+      EOO <- eoosh(projp$p)
+      AOO <- aoosh(projp$p)
       values$eooarea <- EOO$area
       values$aooarea <- AOO$area
+      values$eoo_rat <- ratingEoo(EOO$area,abb=TRUE)
+      values$aoo_rat <- ratingAoo(AOO$area,abb=TRUE)
       #JMJMJMMJ
       leaflet::leafletProxy("mymap",data = AOO$polysf) %>%
         leaflet::addPolygons(
