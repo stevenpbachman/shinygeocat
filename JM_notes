@@ -1,5 +1,7 @@
 Justins notes
 
+NOT WORKING look at: https://stackoverflow.com/questions/42237530/leaflet-r-derivepolygons-missing-lat-missing-long 
+
 WORK DONE
 
 #udpated POWO search to trap when you have no results, ugly but works

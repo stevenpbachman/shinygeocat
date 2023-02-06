@@ -133,8 +133,12 @@ geocatApp <- function(...) {
       ## SIS download widget ----
       fluidRow(
         column(
-          8, align="center", 
+          4, align="center", 
           downloadButton('download', "Download SIS point file")
+        ),
+        column(
+          4, align="center", 
+          downloadButton('download_csv', "Download csv file")
         ),
         column(
           4, align = "center", 
@@ -176,23 +180,13 @@ server <- function(input, output, session) {
     #shiny::validate(check_fields_(data, c("longitude", "latitude","id")))
     shiny::validate(check_numeric_(data, c("longitude", "latitude")))
 
-    csv_imported <- data %>%
-          dplyr::select(longitude,latitude, id) %>%
-          dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
-          dplyr::filter(longitude < 180, longitude > -180,
-                        latitude < 90, latitude > -90) %>%
-          dplyr::mutate(
-            geocat_id=seq.int(nrow(values$analysis_data)),
-            geocat_source="csv import",
-          )
-          
-    values$analysis_data <-
-      dplyr::bind_rows(
-        values$analysis_data,
-        csv_imported
-      )
-
-    data
+    #quick clean up of data
+    csvimported <- data %>% dplyr::filter(longitude < 180, longitude > -180,
+                                          latitude < 90, latitude > -90)
+    #sorts out field names etc and merges with main analysis data
+     values$analysis_data <- csvmerge(csvimported)
+    #No idea why but if I remove below it dies!!! Baz?? I assume it needs to return some
+     values$analysis_data
   })
   
   gbifPointsInput <- eventReactive(input$queryGBIF, {
@@ -288,9 +282,37 @@ server <- function(input, output, session) {
       )
     })
 
-  shiny::observeEvent(input$leafmap_draw_new_feature, {
-    print("New Feature added")
+#####Map Events############
+##JM
+  # Start of Drawing
+  observeEvent(input$mymap_draw_start, {
+    print("Start of drawing")
+    #print(input$leafmap_draw_start)
   })
+  #
+  observeEvent(input$mymap_draw_new_feature, {
+    print("New Point added1")
+    #add this feature to the dataframe
+    #get empty dataframe
+    values$analysis_data[nrow(values$analysis_data)+1,] <-NA
+    values$analysis_data[nrow(values$analysis_data),]$latitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[2]])
+    values$analysis_data[nrow(values$analysis_data),]$longitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[1]])
+    values$analysis_data[nrow(values$analysis_data),]$geocat_use <- TRUE
+    # newpoint <- buildspdf()
+    # newpoint[nrow(newpoint)+1,] <- NA
+    # newpoint$latitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[2]])
+    # newpoint$longitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[1]])
+    # newpoint$geocat_source <- "User point"
+    # newpoint$geocat_leaflet_id <- as.numeric(input$mymap_draw_new_feature$properties$'_leaflet_id')
+    # newpoint$geocat_status = TRUE
+    # newpoint$geocat_notes <- paste("New point added at", as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[1]]),as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[2]]))
+    # print("New feature added2")
+    # values$analysis_data <- rbind(values$analysis_data,newpoint)
+    # print("New feature added3")
+    # print(values$analysis_data)
+  })
+  
+############################
 
   output$validation <- shiny::renderPrint({
     data <- csvpointsInput()
@@ -467,7 +489,20 @@ server <- function(input, output, session) {
     }
   )
   
-  shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
+  # csv file download handler
+  output$download_csv = downloadHandler(
+    filename = function(){
+      date <- format(Sys.Date(), "%Y%m%d")
+      species_name <- "sp"
+      paste(species_name, "_", date, ".csv", sep = "" )
+    },
+    content = function(file){
+      write_csv(values$analysis_data, file)
+    }
+  )
+  
+  shiny::observeEvent(input$Analysis, {
+    
     if (input$Analysis){
       #analysis here
       #print(values$analysis_data)
