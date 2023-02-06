@@ -16,10 +16,10 @@ geocatApp <- function(...) {
     # Sidebar panel for inputs
     shiny::sidebarPanel(
       
-      p("This is a simple version of the GeoCAT app.", "It currenlty does not have functionality to add GBIF data or edit points."),
+      p("This is a BETA test version. Send any feedback to s.bachman@kew.org."),
       
       
-      p("Moat, J., Bachman, S., & Walker, B. (2023). GeoCAT - Geospatial Conservation Assessment Tools (BETA) [Software]. Available from https://spbachman.shinyapps.io/geocat_staging/"),
+      p("Moat, J., Bachman, S., & Walker, B. (2023). ShinyGeoCAT - Geospatial Conservation Assessment Tools (BETA) [Software]. Available from https://spbachman.shinyapps.io/geocat_staging/"),
       br(),
       
       # sidebar ----
@@ -244,9 +244,16 @@ server <- function(input, output, session) {
   })
   
   shiny::observeEvent(input$queryPOWO, {
-
+    
       leaflet::leafletProxy("mymap") %>%
-        
+      
+      #bb <- sf::st_bbox(powo_range()) %>%
+      
+      #leaflet::fitBounds(bb[1],bb[2], bb[3], bb[4]) %>%
+
+      # zoom to fit - can we buffer this a little?
+      #leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
+     
         leaflet::addPolygons(
           data = powo_range(),
           color = "red",
