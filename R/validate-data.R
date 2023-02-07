@@ -78,3 +78,37 @@ check_zeros_ <- function(df, field) {
   
   msg
 }
+
+#' standardised headings and types for occurrence table
+#' 
+empty_tbl_ <- function() {
+  tibble::tibble(
+    basisOfRecord=character(),
+    genus=character(),
+    specificEpithet=character(),
+    sci_name=character(),
+    latitude=numeric(),
+    longitude=numeric(),
+    coordinateUncertaintyInMeters=numeric(),
+    locality=character(),
+    event_year=numeric(),
+    catalogNumber=character(),
+    spatialref=character(),
+    presence=numeric(),
+    origin=numeric(),
+    seasonal=numeric(),
+    data_sens=character(),
+    source=character(),
+    yrcompiled=character(),
+    compiler=character(),
+    citation=character(),
+    recordedBy=character(),
+    recordNumber=character(),
+    datasetKey=character(),
+    group=character(),
+    geocat_id=numeric(),
+    geocat_status=character(),
+    geocat_use=logical(),
+    geocat_analysis=logical()
+  )
+}
