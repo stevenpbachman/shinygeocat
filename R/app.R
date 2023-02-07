@@ -379,8 +379,9 @@ server <- function(input, output, session) {
       points <- select(points, longitude, latitude)
       
       projected_points <- simProjWiz(points)
-      EOO <- eoosh(projected_points)
-      AOO <- aoosh(projected_points)
+
+      EOO <- eoosh(projected_points$p)
+      AOO <- aoosh(projected_points$p)
 
       eoo_rating <- ratingEoo(EOO$area, abb=TRUE)
       aoo_rating <- ratingAoo(AOO$area, abb=TRUE)
