@@ -70,7 +70,7 @@ geocatApp <- function(...) {
       br(),
       
       shiny::fluidRow(column(
-        12, align = "center", verbatimTextOutput("validation")
+        12, align = "center", verbatimTextOutput("csvValidation")
       )),
       
       br(),
@@ -90,6 +90,12 @@ geocatApp <- function(...) {
         ),
       ),
       ## GBIF input field ----
+      shiny::fluidRow(column(
+        12, align = "center", verbatimTextOutput("gbifValidation")
+      )),
+      
+      br(),
+      
       fluidRow(
         column(8, align="left",
                tags$h5("Enter a taxon name to load points from GBIF:")
@@ -259,7 +265,7 @@ server <- function(input, output, session) {
       )
     })
   
-  output$validation <- shiny::renderPrint({
+  output$csvValidation <- shiny::renderPrint({
     data <- csvpointsInput()
     if (! is.data.frame(data)) {
       data
@@ -276,6 +282,13 @@ server <- function(input, output, session) {
     
     if (! is.null(msg)) {
       msg
+    }
+  })
+  
+  output$gbifValidation <- shiny::renderPrint({
+    data <- gbifPointsInput()
+    if (nrow(data) == 0) {
+      cat("No records found in GBIF.\nCheck the name is in the GBIF backbone.")
     }
   })
   
