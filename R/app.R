@@ -485,6 +485,8 @@ server <- function(input, output, session) {
         results_html <- HTML(paste(eoo_str, aoo_str, sep='<br>'))
                              
         HTML(paste0("<p style='color:orange;'>", results_html, "</p>"))
+      } else {
+        HTML("<p style='color:red;'> No valid points found</p>")
       }
     }
   })
