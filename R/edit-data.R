@@ -57,3 +57,16 @@ delete_point <- function(feature, point_tbl) {
       geocat_deleted=ifelse(geocat_id == id, TRUE, geocat_deleted)
     )
 }
+
+flag_native <- function(point_tbl, native_geom) {
+  points_sf <- st_as_sf(point_tbl, coords=c("longitude", "latitude"),
+                        crs=st_crs(native_geom))
+  
+  in_native <- st_within(points_sf, st_make_valid(native_geom), sparse=FALSE)
+  
+  is_native <- rowSums(in_native) >= 1
+  
+  point_tbl$geocat_native <- is_native
+  
+  point_tbl
+}

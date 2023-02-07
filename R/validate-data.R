@@ -179,6 +179,7 @@ empty_tbl_ <- function() {
     geocat_source=character(),
     geocat_use=logical(),
     geocat_notes=character(),
+    geocat_native=logical(),
     geocat_deleted=logical()
   )
 }
