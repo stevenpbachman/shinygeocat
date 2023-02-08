@@ -33,7 +33,7 @@ geocatApp <- function(...) {
         )
       ),
       
-      # swich csv points on/off from map
+      # switch csv points on/off from map
       shiny::htmlOutput("res_title"),
       ## EOO AOO results ----
       shiny::htmlOutput("text"),
@@ -165,8 +165,9 @@ server <- function(input, output, session) {
   
   observeEvent(input$reset, {
       session$reload()
-  })
-  
+  }
+  )
+  ##################################
   # prepare the points
   csvpointsInput <- shiny::eventReactive(input$csv_in, {
     ext <- tools::file_ext(input$csv_in$datapath)
@@ -176,16 +177,14 @@ server <- function(input, output, session) {
       shiny::validate("Invalid file; please upload a .csv file")
     }
     ###########################################################
-    #ID not needed any more
-    #shiny::validate(check_fields_(data, c("longitude", "latitude","id")))
     shiny::validate(check_numeric_(data, c("longitude", "latitude")))
-
-    #quick clean up of data
+    #quick clean up of data, note anything outside of these bounds are ignored
+    #could report back to user
     csvimported <- data %>% dplyr::filter(longitude < 180, longitude > -180,
                                           latitude < 90, latitude > -90)
     #sorts out field names etc and merges with main analysis data
-     values$analysis_data <- csvmerge(csvimported)
-    #No idea why but if I remove below it dies!!! Baz?? I assume it needs to return some
+     values$analysis_data <- merge(csvmerge(csvimported),values$analysis_data, all=TRUE)
+     #return to validation
      values$analysis_data
   })
   
@@ -210,11 +209,6 @@ server <- function(input, output, session) {
   # leaflet base output map ----
   output$mymap <- leaflet::renderLeaflet({
     leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 2)) %>%
-      
-      leaflet::setView(lng = 0,
-                       lat = 0,
-                       zoom = 3) %>%
-      
       leaflet.extras::addSearchOSM(options = leaflet.extras::searchOptions(
         autoCollapse = F,
         collapsed = F,
@@ -225,7 +219,6 @@ server <- function(input, output, session) {
       leaflet::addScaleBar(position = "bottomright") %>%
       ######################################################
       #JM
-      #df <- values$analysis_data
       leaflet.extras::addDrawToolbar(editOptions = editToolbarOptions(edit=TRUE),
                                      targetGroup = 'mappoints',
                                      circleMarkerOptions=FALSE,
@@ -233,7 +226,7 @@ server <- function(input, output, session) {
                                      circleOptions=FALSE,
                                      polygonOptions=FALSE,
                                      polylineOptions=FALSE) %>%
-      
+      #note use geo_use to mark point not needed for analysis, points are not deleted
       leaflet::addCircleMarkers(data = values$analysis_data[values$analysis_data$geocat_use==TRUE,],
                  popup = "popup",#~thetext,
                  layerId = ~geocat_id,
@@ -241,8 +234,10 @@ server <- function(input, output, session) {
                  radius = 7,
                  color="#FFFFFF",
                  stroke = T,
-                 fillColor = "#FF0000",
-                 fillOpacity = 1,
+                 weight = 2.5,
+                 fill = T,
+                 fillColor = "#0070FF",
+                 fillOpacity = 0.5,
                  options = markerOptions(draggable = FALSE)) %>%
       #####################################################
       leaflet::addMeasure(
@@ -278,38 +273,48 @@ server <- function(input, output, session) {
           "Open Street Map",
           "Open Topo Map"
         ),
-        options = leaflet::layersControlOptions(collapsed = FALSE)
+        options = leaflet::layersControlOptions(collapsed = TRUE)
       )
     })
 
 #####Map Events############
 ##JM
-  # Start of Drawing
-  observeEvent(input$mymap_draw_start, {
-    print("Start of drawing")
-    #print(input$leafmap_draw_start)
-  })
-  #
+  #add new point
   observeEvent(input$mymap_draw_new_feature, {
-    print("New Point added1")
     #add this feature to the dataframe
     #get empty dataframe
     values$analysis_data[nrow(values$analysis_data)+1,] <-NA
     values$analysis_data[nrow(values$analysis_data),]$latitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[2]])
     values$analysis_data[nrow(values$analysis_data),]$longitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[1]])
     values$analysis_data[nrow(values$analysis_data),]$geocat_use <- TRUE
-    # newpoint <- buildspdf()
-    # newpoint[nrow(newpoint)+1,] <- NA
-    # newpoint$latitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[2]])
-    # newpoint$longitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[1]])
-    # newpoint$geocat_source <- "User point"
-    # newpoint$geocat_leaflet_id <- as.numeric(input$mymap_draw_new_feature$properties$'_leaflet_id')
-    # newpoint$geocat_status = TRUE
-    # newpoint$geocat_notes <- paste("New point added at", as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[1]]),as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[2]]))
-    # print("New feature added2")
-    # values$analysis_data <- rbind(values$analysis_data,newpoint)
-    # print("New feature added3")
-    # print(values$analysis_data)
+    values$analysis_data[nrow(values$analysis_data),]$geocat_source <- "User point"
+    values$analysis_data[nrow(values$analysis_data),]$geocat_leaflet_id <- as.numeric(input$mymap_draw_new_feature$properties$'_leaflet_id')
+    values$analysis_data[nrow(values$analysis_data),]$geocat_id <- as.numeric(input$mymap_draw_new_feature$properties$'_leaflet_id') #this may need changing as I may get repeats of ID's????
+    values$analysis_data[nrow(values$analysis_data),]$geocat_notes <- paste("New point added at", as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[1]]),as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[2]]))
+  })
+  #move points
+  observeEvent(input$mymap_draw_edited_features, {
+    print("Edited a point1")
+    for (i in 1:length(input$mymap_draw_edited_features$features)){
+        lookupv <- input$mymap_draw_edited_features$features[[i]]$properties$layerId
+        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$longitude <- as.numeric(input$mymap_draw_edited_features$features[[i]]$geometry$coordinates[[1]])
+        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$latitude <- as.numeric(input$mymap_draw_edited_features$features[[i]]$geometry$coordinates[[2]])
+        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_source <- "User point"
+        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_leaflet_id <- as.numeric(input$mymap_draw_edited_features$features[[i]]$properties$'_leaflet_id')
+        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_notes <- "Point moved"
+      }
+    })
+
+  #delete points = actually just marks them not to display
+  observeEvent(input$mymap_draw_deleted_features, {
+    print("Deleted a point1")
+    for (i in 1:length(input$mymap_draw_deleted_features$features)){
+      lookupv <- input$mymap_draw_deleted_features$features[[i]]$properties$layerId
+      values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_leaflet_id <- as.numeric(input$mymap_draw_deleted_features$features[[i]]$properties$'_leaflet_id')
+      values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_notes <- "User deleted"
+      values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_use <- FALSE
+    }
+    
   })
   
 ############################
@@ -320,9 +325,6 @@ server <- function(input, output, session) {
       data
     }
     msg <- c(
-      #check_complete_(data, c("longitude", "latitude", "id")),
-      #check_range_(data, "longitude", -180, 180),
-      #check_range_(data, "latitude", -90, 90),
       check_rounded_(data, "longitude"),
     )
     if (! is.null(msg)) {
@@ -368,28 +370,9 @@ server <- function(input, output, session) {
      
 })
 
-  shiny::observeEvent(input$csv_in, {
-    
-    df <- values$analysis_data
-    #needs cleaning up with formating and maybe more information
-    popuptext <- paste(df$geocat_id,df$sci_name,df$latitude,df$longitude)
-    
-    leaflet::leafletProxy("mymap", data=df) %>%
-      
-      # zoom to fit - can we buffer this a little?
-      leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-      
-      leaflet::addCircleMarkers(group = "View Points",
-                                lng = ~longitude,
-                                lat = ~latitude,
-                                radius = 7,
-                                color = "#FFFFFF",
-                                stroke = T,
-                                fillOpacity = 1,
-                                fill = T,
-                                fillColor = "#0070ff",
-                                popup = as.character(popuptext))
-  })
+  #shiny::observeEvent(input$csv_in, {
+    #no longer needed, but kept just incase
+  #})
   
   shiny::observeEvent(input$queryGBIF, {
     df <- gbifPointsInput()
@@ -493,7 +476,7 @@ server <- function(input, output, session) {
   output$download_csv = downloadHandler(
     filename = function(){
       date <- format(Sys.Date(), "%Y%m%d")
-      species_name <- "sp"
+      species_name <- "sh_geocat" #needs to come from something useful
       paste(species_name, "_", date, ".csv", sep = "" )
     },
     content = function(file){
@@ -504,24 +487,14 @@ server <- function(input, output, session) {
   shiny::observeEvent(input$Analysis, {
     
     if (input$Analysis){
-      #analysis here
-      #print(values$analysis_data)
-      d  <- data.frame(long=values$analysis_data$longitude,lat=values$analysis_data$latitude)
-      # if (!input$gbif_onoff) {
-      #   d <- dplyr::filter(d, source != "gbif")
-      # }
-      #if (!input$csv_onoff) {
-      #  d <- dplyr::filter(d, source != "csv")
-      #}
+      d  <- data.frame(long=values$analysis_data[values$analysis_data$geocat_use==TRUE,]$longitude,lat=values$analysis_data[values$analysis_data$geocat_use==TRUE,]$latitude)
       if (nrow(d) == 0)  {
         return()
       }
-      #d <- dplyr::select(d, -source)#is this needed or is it the above needed, I think they are doing the same thing
       #JMJJMJMJMJM
       #project the data so we can work on it in a sensible space for areas and distance
       projp <- simProjWiz(d)
       #reports projection need to sent this to validate
-      #
       print (projp$crs)
       EOO <- eoosh(projp$p)
       AOO <- aoosh(projp$p)
@@ -529,7 +502,6 @@ server <- function(input, output, session) {
       values$aooarea <- AOO$area
       values$eoo_rat <- ratingEoo(EOO$area,abb=TRUE)
       values$aoo_rat <- ratingAoo(AOO$area,abb=TRUE)
-      #JMJMJMMJ
       leaflet::leafletProxy("mymap",data = AOO$polysf) %>%
         leaflet::addPolygons(
           color = "#000000",

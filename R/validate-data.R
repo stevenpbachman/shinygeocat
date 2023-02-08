@@ -2,8 +2,20 @@
 
 
 
-#Function to setup empty dataframe for geoCAT to work with
-#JM
+###########################################################
+#Sets up empty template dataframe following Darwin core 2                                 #
+###########################################################
+#' @title build darwin core dataframe
+#' @description 
+#' Sets up empty template dataframe following Darwin core 2
+#' 
+#' @author Justin Moat. J.Moat@kew.org
+#' @return dataframe
+#' @examples
+#'buildspdf()
+#' @references
+#' https://dwc.tdwg.org/ & https://github.com/tdwg/dwc
+
 #notes
 #follows darwin core
 #geocat_source = where the data has come from (ie gbif, csv import, user defined)
@@ -48,19 +60,24 @@ buildspdf <- function(){
              geocat_notes = as.character(),
              geocat_leaflet_id = as.integer()
   )
-  #add some dummy data
-  #mypoints <- data.frame(longitude = rnorm(4) + 46, latitude = rnorm(4) + -21, geocat_id = c(1:4),geocat_use=TRUE)
-  #merge(df,mypoints, all=TRUE)
-  
-  
 }
-#JM
-#function to merge user csv with internal df
-#sorts out field names to Darwin core standard
-#only does ignoring case
+###########################################################
+#Merges user csv entered with internal df                                 #
+###########################################################
+#' @title merge csv with darwin core
+#' @description 
+#' sorts out field names to Darwin core standard 2
+#' 
+#' @author Justin Moat. J.Moat@kew.org
+#' @return dataframe
+#' @examples
+#'csvmerge(mycsv)
+#' @references
+#' https://dwc.tdwg.org/ & https://github.com/tdwg/dwc
+#notes 
+#ignoring case
 #may want to make this a bit more smart
-#mycsv is the data you wish to check
-#mydf = internal field names
+
 csvmerge <- function(mycsv){
   #mycsv <- read.csv(file.choose())
   geocat_df <- buildspdf() # from above
