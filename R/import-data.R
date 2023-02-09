@@ -1,4 +1,38 @@
-#' Get a table of occurrence points from GBIF.
+# functions to import data from data sources.
+
+#' Import a table of occurrence points from a user-provided CSV.
+#'
+#' Load points from a CSV and parse them into a standard format. All columns
+#' that don't match the standard format will be discard.
+#' 
+#' @param path path to csv to read.
+#' 
+#' @return a standardised tibble of occurrence records
+#' 
+#' @examples
+#' points <- import_csv("path/to/file")
+#' 
+#' @import dplyr stringr readr
+import_csv <- function(path) {
+  data <- read_csv(path, show_col_types=FALSE, progress=FALSE)
+  data <- rename_with(data, str_to_lower)
+  
+  template <- empty_tbl_()
+  template_names <- colnames(template)
+  
+  data <- select(data, any_of(str_to_lower(template_names)))
+  
+  kept_idx <- which(str_to_lower(template_names) %in% colnames(data))
+  colnames(data) <- template_names[kept_idx]
+  
+  if (! "geocat_use" %in% colnames(data)) {
+    data$geocat_use <- TRUE
+  }
+  
+  data
+}
+
+#' Import a table of occurrence points from GBIF.
 #' 
 #' Request points from GBIF and parses them into a standard format. By default,
 #' gets the first 900 points with coordinates and no geospatial issues for a name. 
@@ -10,9 +44,9 @@
 #' @return a standardised tibble of occurrence records.
 #' 
 #' @examples
-#' points <- get_gbif_points("Poa annua")
+#' points <- import_gbif("Poa annua")
 #' 
-get_gbif_points <- function(name, limit=900) {
+import_gbif <- function(name, limit=900) {
   points <- list()
   end_of_records <- FALSE
   i <- 0
@@ -23,7 +57,10 @@ get_gbif_points <- function(name, limit=900) {
     end_of_records <- results$endOfRecords
   }
   
-  gbif_points_(points)
+  points <- gbif_points_(points)
+  points$geocat_use <- TRUE
+  
+  points
 }
 
 #' Request occurrence points for a name from GBIF.
@@ -93,5 +130,3 @@ gbif_points_ <- function(points) {
   
   dplyr::as_tibble(points_list)
 }
-
-

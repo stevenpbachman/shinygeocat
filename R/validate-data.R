@@ -1,107 +1,3 @@
-#Functions to check, merge and make dataframes.
-
-
-
-###########################################################
-#Sets up empty template dataframe following Darwin core 2                                 #
-###########################################################
-#' @title build darwin core dataframe
-#' @description 
-#' Sets up empty template dataframe following Darwin core 2
-#' 
-#' @author Justin Moat. J.Moat@kew.org
-#' @return dataframe
-#' @examples
-#'buildspdf()
-#' @references
-#' https://dwc.tdwg.org/ & https://github.com/tdwg/dwc
-
-#notes
-#follows darwin core
-#geocat_source = where the data has come from (ie gbif, csv import, user defined)
-#geocat_id = an internal ID which is populated on import (ie 1:nrow), new points will be added to this with a nrow + _leaflet_id (_leaflet_id is a unique number from leaflet) this should allow me to use this id to query all on map edits/delete. The reason for odd allocation is that leaflet assigns its own unique values and I can’t find a way to update (read only), there is a possibility of a clash if,  I just increment ID and I may have get back out the leaflet ID as some point (not sure I do). I may simplify this later.
-#geocat_status = a record of what has happen to a point ie “new point”, “moved point”, “deleted point”
-#geocat_use = Flag to false it point is deleted (could query on above, but I feel this is quicker)?
-#geocat_analysis = Flag for any queries (ie GBIF only etc), which we can switch on or off depending on reactive # elements (ie your switches for GBIF/user)
-#geocat_notes = records what has happened the points when moved (ie moved from x,y to p,q)
-#geocat_leaflet_id = internal id used by leaflet, not needed once leaflet session is finished
-#note at this point #geocat_analysis is not used
-buildspdf <- function(){
-  df <- data.frame(basisOfRecord = as.character(),
-                   genus = as.character(),
-                   specificEpithet = as.character(),
-                   sci_name = as.character(),
-                   latitude = as.numeric(),
-                   longitude = as.numeric(),
-                   coordinateUncertaintyInMeters = as.numeric(),
-                   locality = as.character(),
-                   event_year  = as.numeric(),
-                   catalogNumber = as.character(),
-                   spatialref = as.character(),
-                   presence = as.numeric(),
-                   origin = as.numeric(),
-                   seasonal = as.numeric(),
-                   data_sens = as.character(),
-                   source = as.character(),
-                   yrcompiled = as.character(),
-                   compiler = as.character(),
-                   citation = as.character(),
-                   recordedBy  = as.character(),
-                   recordNumber  = as.character(),
-                   datasetKey = as.character(),
-                   group = as.character(),
-                   
-             #geocat specific fields
-             geocat_source = as.character(),
-             geocat_id = as.integer(),
-             geocat_status = as.character(),
-             geocat_use = as.logical(),
-             geocat_analysis = as.logical(),
-             geocat_notes = as.character(),
-             geocat_leaflet_id = as.integer()
-  )
-}
-###########################################################
-#Merges user csv entered with internal df                                 #
-###########################################################
-#' @title merge csv with darwin core
-#' @description 
-#' sorts out field names to Darwin core standard 2
-#' 
-#' @author Justin Moat. J.Moat@kew.org
-#' @return dataframe
-#' @examples
-#'csvmerge(mycsv)
-#' @references
-#' https://dwc.tdwg.org/ & https://github.com/tdwg/dwc
-#notes 
-#ignoring case
-#may want to make this a bit more smart
-
-csvmerge <- function(mycsv){
-  #mycsv <- read.csv(file.choose())
-  geocat_df <- buildspdf() # from above
-  geo_catNames <- colnames(geocat_df)
-  inNames <- tolower(colnames(mycsv))
-  geocatNameslc <- tolower(colnames(geocat_df))
-  #Get only the matching names
-  newcsv <- mycsv[sort(match(geocatNameslc,inNames,nomatch=0))]
-  #lower case
-  colnames(newcsv) <- tolower(colnames(newcsv))
-  #rename fields to darwin core
-  colnames(newcsv) <- geo_catNames[match(colnames(newcsv),geocatNameslc)]
-  newcsv$geocat_source <- "csv import"
-  #if missing add geocat_use field
-  if (!any(colnames(newcsv) == "geocat_use")){
-    newcsv$geocat_use <- TRUE
-  }
-  alldf <- merge(newcsv,geocat_df,all=TRUE)
-  alldf$geocat_id <- seq.int(nrow(alldf)) #this maybe problematic not totally sure
-  return(alldf)
-}
-
-
-
 # Functions to validate occurrences and occurrence files
 
 check_fields_ <- function(df, required_fields) {
@@ -213,6 +109,8 @@ empty_tbl_ <- function() {
     geocat_id=numeric(),
     geocat_status=character(),
     geocat_use=logical(),
-    geocat_analysis=logical()
+    geocat_analysis=logical(),
+    geocat_notes=character(),
+    geocat_leaflet_id=integer()
   )
 }
