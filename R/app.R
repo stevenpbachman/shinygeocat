@@ -398,7 +398,7 @@ server <- function(input, output, session) {
   #output to analysis on/off switch
   calculateAnalysis <- eventReactive(list(input$Analysis, input$gbif_onoff, input$csv_onoff), {
     if (input$Analysis) {
-      points <- values$analysis_data
+      points <- filter(values$analysis_data, geocat_use)
       
       if (!input$gbif_onoff) {
         points <- filter(points, geocat_source != "GBIF")
@@ -486,25 +486,10 @@ server <- function(input, output, session) {
     }
   )
   
-  shiny::observeEvent(input$Analysis, {
+  shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
     
     if (input$Analysis){
-      d  <- data.frame(long=values$analysis_data[values$analysis_data$geocat_use==TRUE,]$longitude,lat=values$analysis_data[values$analysis_data$geocat_use==TRUE,]$latitude)
-      if (nrow(d) == 0)  {
-        return()
-      }
-      #JMJJMJMJMJM
-      #project the data so we can work on it in a sensible space for areas and distance
-      projp <- simProjWiz(d)
-      #reports projection need to sent this to validate
-      print (projp$crs)
-      EOO <- eoosh(projp$p)
-      AOO <- aoosh(projp$p)
-      values$eooarea <- EOO$area
-      values$aooarea <- AOO$area
-      values$eoo_rat <- ratingEoo(EOO$area,abb=TRUE)
-      values$aoo_rat <- ratingAoo(AOO$area,abb=TRUE)
-      leaflet::leafletProxy("mymap",data = AOO$polysf) %>%
+      leaflet::leafletProxy("mymap",data = values$aoo_polygon) %>%
         leaflet::addPolygons(
           color = "#000000",
           stroke = T,
