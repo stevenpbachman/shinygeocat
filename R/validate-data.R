@@ -107,6 +107,7 @@ empty_tbl_ <- function() {
     datasetKey=character(),
     group=character(),
     geocat_id=numeric(),
+    geocat_source=character(),
     geocat_status=character(),
     geocat_use=logical(),
     geocat_analysis=logical(),

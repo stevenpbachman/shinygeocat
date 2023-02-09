@@ -156,50 +156,45 @@ geocatApp <- function(...) {
 
 ##### server #####
 server <- function(input, output, session) {
-  #JM builds an empty df to populate later
-  ################################
   values <- reactiveValues(
     analysis_data=empty_tbl_()
   )
-  values$analysis_data <- buildspdf()
   
   observeEvent(input$reset, {
       session$reload()
-  }
-  )
+  })
+  
   ##################################
   # prepare the points
-  csvpointsInput <- shiny::eventReactive(input$csv_in, {
+  csvPointsInput <- shiny::eventReactive(input$csv_in, {
     ext <- tools::file_ext(input$csv_in$datapath)
     if (ext == "csv") {
-      data <- read.csv(input$csv_in$datapath)
+      data <- import_csv(input$csv_in$datapath)
     } else {
       shiny::validate("Invalid file; please upload a .csv file")
     }
-    ###########################################################
+    
+    shiny::validate(check_fields_(data, c("longitude", "latitude")))
     shiny::validate(check_numeric_(data, c("longitude", "latitude")))
-    #quick clean up of data, note anything outside of these bounds are ignored
-    #could report back to user
-    csvimported <- data %>% dplyr::filter(longitude < 180, longitude > -180,
-                                          latitude < 90, latitude > -90)
-    #sorts out field names etc and merges with main analysis data
-     values$analysis_data <- merge(csvmerge(csvimported),values$analysis_data, all=TRUE)
-     #return to validation
-     values$analysis_data
+    
+    valid_points <- filter(data, longitude < 180, longitude > -180,
+                           latitude < 90, latitude > -90)
+    
+    values$analysis_data <- bind_rows(values$analysis_data, valid_points)
+    
+    valid_points
   })
   
   gbifPointsInput <- eventReactive(input$queryGBIF, {
-    data <- get_gbif_points(input$gbif_name)
+    points <- import_gbif(input$gbif_name)
+    
     if (nrow(data) == 0) {
-      data <- empty_tbl_()
+      points <- empty_tbl_()
     }
     
-    values$analysis_data <- dplyr::bind_rows(
-      values$analysis_data,
-      dplyr::mutate(data, group="gbif")
-    )
+    values$analysis_data <- bind_rows(values$analysis_data, points)
     
-    data
+    points
   })
   
   powo_range <- shiny::eventReactive(input$powo_id, {
@@ -320,12 +315,19 @@ server <- function(input, output, session) {
 ############################
 
   output$validation <- shiny::renderPrint({
-    data <- csvpointsInput()
+    data <- csvPointsInput()
     if (! is.data.frame(data)) {
       data
     }
     msg <- c(
       check_rounded_(data, "longitude"),
+      check_complete_(data, c("longitude", "latitude")),
+      check_range_(data, "longitude", -180, 180),
+      check_range_(data, "latitude", -90, 90),
+      check_rounded_(data, "longitude"),
+      check_rounded_(data, "latitude"),
+      check_zeros_(data, "longitude"),
+      check_zeros_(data, "latitude")
     )
     if (! is.null(msg)) {
       msg
@@ -339,13 +341,13 @@ server <- function(input, output, session) {
     }
   })
   
-  shiny::observeEvent(req(sum(values$analysis_data$group == "csv") > 0), {
+  shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "User CSV") > 0), {
     shinyjs::enable("Analysis")
     shinyjs::enable("csv_onoff")
     shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
   })
   
-  shiny::observeEvent(req(sum(values$analysis_data$group == "gbif") > 0), {
+  shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "GBIF") > 0), {
     shinyjs::enable("Analysis")
     shinyjs::enable("gbif_onoff")
     shinyWidgets::updateMaterialSwitch(session, "gbif_onoff", value=TRUE)
@@ -399,11 +401,11 @@ server <- function(input, output, session) {
       points <- values$analysis_data
       
       if (!input$gbif_onoff) {
-        points <- filter(points, group != "gbif")
+        points <- filter(points, geocat_source != "GBIF")
       }
       
       if (!input$csv_onoff) {
-        points <- filter(points, group != "csv")
+        points <- filter(points, geocat_source != "User CSV")
       }
       
       points <- select(points, longitude, latitude)
@@ -461,7 +463,7 @@ server <- function(input, output, session) {
       paste(species_name, "_", date, ".csv", sep = "" )
     },
     content = function(file){
-      df = csvpointsInput()
+      df = csvPointsInput()
       # merge with sis format
       df <- dplyr::bind_cols(df,sis_format)
       df$dec_lat <- df$latitude
