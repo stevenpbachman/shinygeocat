@@ -188,7 +188,7 @@ server <- function(input, output, session) {
   gbifPointsInput <- eventReactive(input$queryGBIF, {
     points <- import_gbif(input$gbif_name)
     
-    if (nrow(data) == 0) {
+    if (nrow(points) == 0) {
       points <- empty_tbl_()
     }
     
@@ -222,7 +222,7 @@ server <- function(input, output, session) {
                                      polygonOptions=FALSE,
                                      polylineOptions=FALSE) %>%
       #note use geo_use to mark point not needed for analysis, points are not deleted
-      leaflet::addCircleMarkers(data = values$analysis_data[values$analysis_data$geocat_use==TRUE,],
+      leaflet::addCircleMarkers(data = values$analysis_data[values$analysis_data$geocat_use,],
                  popup = "popup",#~thetext,
                  layerId = ~geocat_id,
                  group="mappoints",
@@ -345,12 +345,22 @@ server <- function(input, output, session) {
     shinyjs::enable("Analysis")
     shinyjs::enable("csv_onoff")
     shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
-  })
+  }, once=TRUE)
   
   shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "GBIF") > 0), {
     shinyjs::enable("Analysis")
     shinyjs::enable("gbif_onoff")
     shinyWidgets::updateMaterialSwitch(session, "gbif_onoff", value=TRUE)
+  }, once=TRUE)
+  
+  observeEvent(input$csv_onoff, {
+    values$analysis_data <- values$analysis_data %>%
+      mutate(geocat_use=ifelse(geocat_source == "User CSV", input$csv_onoff, geocat_use))
+  })
+  
+  observeEvent(input$gbif_onoff, {
+    values$analysis_data <- values$analysis_data %>%
+      mutate(geocat_use=ifelse(geocat_source == "GBIF", input$gbif_onoff, geocat_use))
   })
   
   shiny::observeEvent(input$queryPOWO, {
@@ -370,62 +380,40 @@ server <- function(input, output, session) {
           weight = 2,
           fillColor = "red") 
      
-})
-
-  #shiny::observeEvent(input$csv_in, {
-    #no longer needed, but kept just incase
-  #})
-  
-  shiny::observeEvent(input$queryGBIF, {
-    df <- gbifPointsInput()
-    leaflet::leafletProxy("mymap", data=df) %>%
-      
-      # zoom to fit - can we buffer this a little?
-      leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-      
-      leaflet::addCircleMarkers(group = "View GBIF Points",
-                                lng = ~longitude,
-                                lat = ~latitude,
-                                radius = 7,
-                                color = "#FFFFFF",
-                                stroke = T,
-                                fillOpacity = 1,
-                                fill = T,
-                                fillColor = "#ff69b4",
-                                popup = as.character(df$catalogNumber))
   })
-  
+
   #output to analysis on/off switch
   calculateAnalysis <- eventReactive(list(input$Analysis, input$gbif_onoff, input$csv_onoff), {
     if (input$Analysis) {
       points <- filter(values$analysis_data, geocat_use)
       
-      if (!input$gbif_onoff) {
-        points <- filter(points, geocat_source != "GBIF")
-      }
-      
-      if (!input$csv_onoff) {
-        points <- filter(points, geocat_source != "User CSV")
-      }
-      
       points <- select(points, longitude, latitude)
       
-      projected_points <- simProjWiz(points)
-
-      EOO <- eoosh(projected_points$p)
-      AOO <- aoosh(projected_points$p)
-
-      eoo_rating <- ratingEoo(EOO$area, abb=TRUE)
-      aoo_rating <- ratingAoo(AOO$area, abb=TRUE)
-      
-      values$eooarea <- EOO$area
-      values$aooarea <- AOO$area
-      values$aoo_polygon <- AOO$polysf
-      values$eoo_polygon <- EOO$polysf
-      values$eoo_rating <- eoo_rating
-      values$aoo_rating <- aoo_rating
-      
-      list(eoo=EOO, aoo=AOO, eoo_rating=eoo_rating, aoo_rating=aoo_rating)
+      if (nrow(points) > 0) {
+        projected_points <- simProjWiz(points)
+  
+        EOO <- eoosh(projected_points$p)
+        AOO <- aoosh(projected_points$p)
+  
+        eoo_rating <- ratingEoo(EOO$area, abb=TRUE)
+        aoo_rating <- ratingAoo(AOO$area, abb=TRUE)
+        
+        values$eooarea <- EOO$area
+        values$aooarea <- AOO$area
+        values$aoo_polygon <- AOO$polysf
+        values$eoo_polygon <- EOO$polysf
+        values$eoo_rating <- eoo_rating
+        values$aoo_rating <- aoo_rating
+        
+        list(eoo=EOO, aoo=AOO, eoo_rating=eoo_rating, aoo_rating=aoo_rating)
+      } else {
+        values$eooarea <- NULL
+        values$aooarea <- NULL
+        values$aoo_polygon <- NULL
+        values$eoo_polygon <- NULL
+        values$eoo_rating <- NULL
+        values$aoo_rating <- NULL
+      }
     }
   })
   
@@ -439,19 +427,21 @@ server <- function(input, output, session) {
   output$text <- renderUI({
     if (input$Analysis){
       results <- calculateAnalysis()
-      eoo_str <-
-        paste("Extent of occurrence (EOO): ",
-              format(round(as.numeric(results$eoo$area)), big.mark=","),
-              "km<sup>2</sup>", "-", results$eoo_rating)
-      
-      aoo_str <-
-        paste("Area of occupancy (AOO): ",
-              format(round(as.numeric(results$aoo$area)), big.mark=","),
-              "km<sup>2</sup>", "-", results$aoo_rating)
-      
-      results_html <- HTML(paste(eoo_str, aoo_str, sep='<br>'))
-                           
-      HTML(paste0("<p style='color:orange;'>", results_html, "</p>"))
+      if (! is.null(results)) {
+        eoo_str <-
+          paste("Extent of occurrence (EOO): ",
+                format(round(as.numeric(results$eoo$area)), big.mark=","),
+                "km<sup>2</sup>", "-", results$eoo_rating)
+        
+        aoo_str <-
+          paste("Area of occupancy (AOO): ",
+                format(round(as.numeric(results$aoo$area)), big.mark=","),
+                "km<sup>2</sup>", "-", results$aoo_rating)
+        
+        results_html <- HTML(paste(eoo_str, aoo_str, sep='<br>'))
+                             
+        HTML(paste0("<p style='color:orange;'>", results_html, "</p>"))
+      }
     }
   })
   
@@ -488,8 +478,8 @@ server <- function(input, output, session) {
   
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
     
-    if (input$Analysis){
-      leaflet::leafletProxy("mymap",data = values$aoo_polygon) %>%
+    if (input$Analysis & !is.null(values$aoo_polygon)){
+      leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
         leaflet::addPolygons(
           color = "#000000",
           stroke = T,
@@ -499,7 +489,12 @@ server <- function(input, output, session) {
           fillColor = "red",
           group = "AOOpolys"
         )
-      
+    } else {
+      leafletProxy("mymap") %>%
+        clearGroup("AOOpolys")
+    }
+    
+    if (input$Analysis & !is.null(values$eoo_polygon)) {
       leaflet::leafletProxy("mymap", data=values$eoo_polygon) %>%
         leaflet::clearGroup("EOOpolys") %>%
         leaflet::addPolygons(
@@ -511,13 +506,9 @@ server <- function(input, output, session) {
           fillColor = "grey",
           group = "EOOpolys"
         )
-      
     } else {
       leaflet::leafletProxy("mymap") %>%
-        # clear previous polygons
-        leaflet::clearGroup("EOOpolys") %>%
-        leaflet::clearGroup("AOOpolys")
-      
+        leaflet::clearGroup("EOOpolys")
     }
     
   })
