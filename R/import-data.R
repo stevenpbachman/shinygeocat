@@ -30,7 +30,7 @@ import_csv <- function(path) {
   }
   
   data$geocat_source <- "User CSV"
-  points$geocat_deleted <- FALSE
+  data$geocat_deleted <- FALSE
   data$geocat_id <- paste0("csv", seq(1, nrow(data)))
   
   data
