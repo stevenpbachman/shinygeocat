@@ -453,6 +453,10 @@ server <- function(input, output, session) {
   )
   
   observeEvent(req(nrow(values$analysis_data) > 0), {
+    pal <- colorFactor(
+      palette=c("#509E2F", "#0078b4", "#ECAC7C"),
+      domain=c("GBIF", "User CSV", "User point")
+    )
     #note use geo_use to mark point not needed for analysis, points are not deleted
     leafletProxy("mymap", data=values$analysis_data[values$analysis_data$geocat_use,]) %>%
     leaflet::addCircleMarkers(popup = "popup",#~thetext,
@@ -463,7 +467,7 @@ server <- function(input, output, session) {
                               stroke = T,
                               weight = 2.5,
                               fill = T,
-                              fillColor = "#0070FF",
+                              fillColor = ~pal(geocat_source),
                               fillOpacity = 0.5,
                               options = markerOptions(draggable = FALSE))
   })
