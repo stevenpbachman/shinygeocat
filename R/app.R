@@ -221,19 +221,6 @@ server <- function(input, output, session) {
                                      circleOptions=FALSE,
                                      polygonOptions=FALSE,
                                      polylineOptions=FALSE) %>%
-      #note use geo_use to mark point not needed for analysis, points are not deleted
-      leaflet::addCircleMarkers(data = values$analysis_data[values$analysis_data$geocat_use,],
-                 popup = "popup",#~thetext,
-                 layerId = ~geocat_id,
-                 group="mappoints",
-                 radius = 7,
-                 color="#FFFFFF",
-                 stroke = T,
-                 weight = 2.5,
-                 fill = T,
-                 fillColor = "#0070FF",
-                 fillOpacity = 0.5,
-                 options = markerOptions(draggable = FALSE)) %>%
       #####################################################
       leaflet::addMeasure(
         position = "bottomleft",
@@ -276,38 +263,21 @@ server <- function(input, output, session) {
 ##JM
   #add new point
   observeEvent(input$mymap_draw_new_feature, {
-    #add this feature to the dataframe
-    #get empty dataframe
-    values$analysis_data[nrow(values$analysis_data)+1,] <-NA
-    values$analysis_data[nrow(values$analysis_data),]$latitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[2]])
-    values$analysis_data[nrow(values$analysis_data),]$longitude <- as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[1]])
-    values$analysis_data[nrow(values$analysis_data),]$geocat_use <- TRUE
-    values$analysis_data[nrow(values$analysis_data),]$geocat_source <- "User point"
-    values$analysis_data[nrow(values$analysis_data),]$geocat_leaflet_id <- as.numeric(input$mymap_draw_new_feature$properties$'_leaflet_id')
-    values$analysis_data[nrow(values$analysis_data),]$geocat_id <- as.numeric(input$mymap_draw_new_feature$properties$'_leaflet_id') #this may need changing as I may get repeats of ID's????
-    values$analysis_data[nrow(values$analysis_data),]$geocat_notes <- paste("New point added at", as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[1]]),as.numeric(input$mymap_draw_new_feature$geometry$coordinates[[2]]))
+    point_data <- add_point(input$mymap_draw_new_feature)
+    values$analysis_data <- bind_rows(values$analysis_data, point_data)
   })
+  
   #move points
   observeEvent(input$mymap_draw_edited_features, {
-    print("Edited a point1")
-    for (i in 1:length(input$mymap_draw_edited_features$features)){
-        lookupv <- input$mymap_draw_edited_features$features[[i]]$properties$layerId
-        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$longitude <- as.numeric(input$mymap_draw_edited_features$features[[i]]$geometry$coordinates[[1]])
-        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$latitude <- as.numeric(input$mymap_draw_edited_features$features[[i]]$geometry$coordinates[[2]])
-        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_source <- "User point"
-        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_leaflet_id <- as.numeric(input$mymap_draw_edited_features$features[[i]]$properties$'_leaflet_id')
-        values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_notes <- "Point moved"
+    for (feature in input$mymap_draw_edited_features$features){
+        values$analysis_data <- move_point(feature, values$analysis_data)
       }
     })
 
   #delete points = actually just marks them not to display
   observeEvent(input$mymap_draw_deleted_features, {
-    print("Deleted a point1")
-    for (i in 1:length(input$mymap_draw_deleted_features$features)){
-      lookupv <- input$mymap_draw_deleted_features$features[[i]]$properties$layerId
-      values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_leaflet_id <- as.numeric(input$mymap_draw_deleted_features$features[[i]]$properties$'_leaflet_id')
-      values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_notes <- "User deleted"
-      values$analysis_data[values$analysis_data$geocat_id == lookupv,]$geocat_use <- FALSE
+    for (feature in input$mymap_draw_deleted_features$features){
+      values$analysis_data <- delete_point(feature, values$analysis_data)
     }
     
   })
@@ -341,26 +311,32 @@ server <- function(input, output, session) {
     }
   })
   
-  shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "User CSV") > 0), {
+  observeEvent(req(nrow(values$analysis_data) > 0), {
     shinyjs::enable("Analysis")
+  }, once=TRUE)
+  
+  shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "User CSV") > 0), {
     shinyjs::enable("csv_onoff")
     shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
   }, once=TRUE)
   
   shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "GBIF") > 0), {
-    shinyjs::enable("Analysis")
     shinyjs::enable("gbif_onoff")
     shinyWidgets::updateMaterialSwitch(session, "gbif_onoff", value=TRUE)
   }, once=TRUE)
   
   observeEvent(input$csv_onoff, {
     values$analysis_data <- values$analysis_data %>%
-      mutate(geocat_use=ifelse(geocat_source == "User CSV", input$csv_onoff, geocat_use))
+      mutate(geocat_use=ifelse(geocat_source == "User CSV", input$csv_onoff, geocat_use)) %>%
+      # make sure deleted points aren't turned back on
+      mutate(geocat_use=ifelse(geocat_deleted, FALSE, geocat_use))
   })
   
   observeEvent(input$gbif_onoff, {
     values$analysis_data <- values$analysis_data %>%
-      mutate(geocat_use=ifelse(geocat_source == "GBIF", input$gbif_onoff, geocat_use))
+      mutate(geocat_use=ifelse(geocat_source == "GBIF", input$gbif_onoff, geocat_use)) %>%
+      # make sure deleted points aren't turned back on
+      mutate(geocat_use=ifelse(geocat_deleted, FALSE, geocat_use))
   })
   
   shiny::observeEvent(input$queryPOWO, {
@@ -383,7 +359,7 @@ server <- function(input, output, session) {
   })
 
   #output to analysis on/off switch
-  calculateAnalysis <- eventReactive(list(input$Analysis, input$gbif_onoff, input$csv_onoff), {
+  calculateAnalysis <- eventReactive(list(input$Analysis, values$analysis_data), {
     if (input$Analysis) {
       points <- filter(values$analysis_data, geocat_use)
       
@@ -475,6 +451,22 @@ server <- function(input, output, session) {
       write_csv(values$analysis_data, file)
     }
   )
+  
+  observeEvent(req(nrow(values$analysis_data) > 0), {
+    #note use geo_use to mark point not needed for analysis, points are not deleted
+    leafletProxy("mymap", data=values$analysis_data[values$analysis_data$geocat_use,]) %>%
+    leaflet::addCircleMarkers(popup = "popup",#~thetext,
+                              layerId = ~geocat_id,
+                              group="mappoints",
+                              radius = 7,
+                              color="#FFFFFF",
+                              stroke = T,
+                              weight = 2.5,
+                              fill = T,
+                              fillColor = "#0070FF",
+                              fillOpacity = 0.5,
+                              options = markerOptions(draggable = FALSE))
+  })
   
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
     

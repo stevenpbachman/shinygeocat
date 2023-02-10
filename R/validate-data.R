@@ -106,12 +106,10 @@ empty_tbl_ <- function() {
     recordNumber=character(),
     datasetKey=character(),
     group=character(),
-    geocat_id=numeric(),
+    geocat_id=character(),
     geocat_source=character(),
-    geocat_status=character(),
     geocat_use=logical(),
-    geocat_analysis=logical(),
     geocat_notes=character(),
-    geocat_leaflet_id=integer()
+    geocat_deleted=logical()
   )
 }
