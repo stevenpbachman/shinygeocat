@@ -40,40 +40,37 @@ geocatApp <- function(...) {
       
       br(),
       
-      shinyjs::disabled(
-        ## csv points on/off ----
-        shinyWidgets::materialSwitch(
-          inputId = "csv_onoff",
-          label = "User occurrences",
-          value = FALSE,
-          status = "info",
-          right = TRUE
+      shiny::fluidRow(
+        column(
+          6, align = "left", 
+          shinyjs::disabled(
+            ## csv points on/off ----
+            shinyWidgets::prettySwitch(
+              inputId = "csv_onoff",
+              label = "User occurrences",
+              value = FALSE,
+              status = "primary",
+              fill = TRUE
+            ),
+            shiny::fluidRow(column(
+              12, align = "center", verbatimTextOutput("validation")
+            ))
+          ),
         ),
-        shiny::fluidRow(column(
-          12, align = "center", verbatimTextOutput("validation")
-        ))
-      ),
-
-      br(),
-      
-      shinyjs::disabled(
-        ## GBIF points on/off ----
-        shinyWidgets::materialSwitch(
-          inputId = "gbif_onoff",
-          label = "GBIF occurrences",
-          value = FALSE,
-          status = "info",
-          right = TRUE
+        column(
+          6, align = "left", 
+          shinyjs::disabled(
+            ## GBIF points on/off ----
+            shinyWidgets::prettySwitch(
+              inputId = "gbif_onoff",
+              label = "GBIF occurrences",
+              value = FALSE,
+              status = "success",
+              fill = TRUE
+            )
+          ),
         )
       ),
-      
-      br(),
-      
-      shiny::fluidRow(column(
-        12, align = "center", verbatimTextOutput("csvValidation")
-      )),
-      
-      br(),
       
       shiny::fluidRow(
         ## CSV input widget ----
@@ -94,10 +91,8 @@ geocatApp <- function(...) {
         12, align = "center", verbatimTextOutput("gbifValidation")
       )),
       
-      br(),
-      
       fluidRow(
-        column(8, align="left",
+        column(12, align="left",
                tags$h5("Enter a taxon name to load points from GBIF:")
         )
       ),
@@ -110,7 +105,7 @@ geocatApp <- function(...) {
       ),
       ## POWO ID field ----
       fluidRow(
-        column(8, align="left",
+        column(12, align="left",
                tags$h5("Enter a POWO ID for a native range map:")
         )
       ),
@@ -220,6 +215,8 @@ server <- function(input, output, session) {
       )) %>%
       
       leaflet::addScaleBar(position = "bottomright") %>%
+      
+      leafem::addMouseCoordinates() %>%
       
       leaflet::addMeasure(
         position = "bottomleft",
