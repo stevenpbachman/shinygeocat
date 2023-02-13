@@ -4,7 +4,7 @@ geocatApp <- function(...) {
   ui <- fluidPage(
     
     shinyjs::useShinyjs(),
-    
+   
     tags$html(lang = "en"),
     
     # title
@@ -33,7 +33,7 @@ geocatApp <- function(...) {
         )
       ),
       
-      # swich csv points on/off from map
+      # switch csv points on/off from map
       shiny::htmlOutput("res_title"),
       ## EOO AOO results ----
       shiny::htmlOutput("text"),
@@ -80,7 +80,7 @@ geocatApp <- function(...) {
         column(
           12,
           align = "centre",
-          shiny::helpText("Upload a CSV with a unique 'id' and 'longitude', 'latitude' fields "),
+          shiny::helpText("Upload a CSV with at least 'longitude', 'latitude' fields "),
           shiny::fileInput(
             "csv_in",
             NULL,
@@ -133,8 +133,12 @@ geocatApp <- function(...) {
       ## SIS download widget ----
       fluidRow(
         column(
-          8, align="center", 
+          4, align="center", 
           downloadButton('download', "Download SIS point file")
+        ),
+        column(
+          4, align="center", 
+          downloadButton('download_csv', "Download csv file")
         ),
         column(
           4, align = "center", 
@@ -160,44 +164,37 @@ server <- function(input, output, session) {
       session$reload()
   })
   
+  ##################################
   # prepare the points
-  csvpointsInput <- shiny::eventReactive(input$csv_in, {
+  csvPointsInput <- shiny::eventReactive(input$csv_in, {
     ext <- tools::file_ext(input$csv_in$datapath)
     if (ext == "csv") {
-      data <- read.csv(input$csv_in$datapath)
+      data <- import_csv(input$csv_in$datapath)
     } else {
       shiny::validate("Invalid file; please upload a .csv file")
     }
     
-    shiny::validate(check_fields_(data, c("longitude", "latitude", "id")))
+    shiny::validate(check_fields_(data, c("longitude", "latitude")))
     shiny::validate(check_numeric_(data, c("longitude", "latitude")))
     
-    values$analysis_data <-
-      dplyr::bind_rows(
-        values$analysis_data,
-        data %>%
-          dplyr::select(longitude,latitude, id) %>%
-          dplyr::filter(if_all(everything(), ~!is.na(.))) %>%
-          dplyr::filter(longitude < 180, longitude > -180,
-                        latitude < 90, latitude > -90) %>%
-          dplyr::mutate(group="csv")
-      )
+    valid_points <- filter(data, longitude < 180, longitude > -180,
+                           latitude < 90, latitude > -90)
     
-    data
+    values$analysis_data <- bind_rows(values$analysis_data, valid_points)
+    
+    valid_points
   })
   
   gbifPointsInput <- eventReactive(input$queryGBIF, {
-    data <- get_gbif_points(input$gbif_name)
-    if (nrow(data) == 0) {
-      data <- empty_tbl_()
+    points <- import_gbif(input$gbif_name)
+    
+    if (nrow(points) == 0) {
+      points <- empty_tbl_()
     }
     
-    values$analysis_data <- dplyr::bind_rows(
-      values$analysis_data,
-      dplyr::mutate(data, group="gbif")
-    )
+    values$analysis_data <- bind_rows(values$analysis_data, points)
     
-    data
+    points
   })
   
   powo_range <- shiny::eventReactive(input$powo_id, {
@@ -207,11 +204,6 @@ server <- function(input, output, session) {
   # leaflet base output map ----
   output$mymap <- leaflet::renderLeaflet({
     leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 2)) %>%
-      
-      leaflet::setView(lng = 0,
-                       lat = 0,
-                       zoom = 2) %>%
-      
       leaflet.extras::addSearchOSM(options = leaflet.extras::searchOptions(
         autoCollapse = F,
         collapsed = F,
@@ -220,7 +212,16 @@ server <- function(input, output, session) {
       )) %>%
       
       leaflet::addScaleBar(position = "bottomright") %>%
-      
+      ######################################################
+      #JM
+      leaflet.extras::addDrawToolbar(editOptions = editToolbarOptions(edit=TRUE),
+                                     targetGroup = 'mappoints',
+                                     circleMarkerOptions=FALSE,
+                                     rectangleOptions=FALSE,
+                                     circleOptions=FALSE,
+                                     polygonOptions=FALSE,
+                                     polylineOptions=FALSE) %>%
+      #####################################################
       leaflet::addMeasure(
         position = "bottomleft",
         primaryLengthUnit = "meters",
@@ -233,12 +234,6 @@ server <- function(input, output, session) {
         provider = "Esri.WorldImagery",
         #provider$Esri.WorldImagery,
         group = "ESRI World Imagery (default)",
-        options = leaflet::providerTileOptions(noWrap = TRUE)
-      )  %>%
-      
-      leaflet::addProviderTiles(
-        provider = "Esri.WorldStreetMap",
-        group = "ESRI Open Street map",
         options = leaflet::providerTileOptions(noWrap = TRUE)
       )  %>%
       
@@ -258,20 +253,45 @@ server <- function(input, output, session) {
         baseGroups = c(
           "ESRI World Imagery",
           "Open Street Map",
-          "Open Topo Map",
-          "ESRI Open Street map"
+          "Open Topo Map"
         ),
-        options = leaflet::layersControlOptions(collapsed = FALSE)
+        options = leaflet::layersControlOptions(collapsed = TRUE)
       )
     })
+
+#####Map Events############
+##JM
+  #add new point
+  observeEvent(input$mymap_draw_new_feature, {
+    point_data <- add_point(input$mymap_draw_new_feature)
+    values$analysis_data <- bind_rows(values$analysis_data, point_data)
+  })
   
-  output$csvValidation <- shiny::renderPrint({
-    data <- csvpointsInput()
+  #move points
+  observeEvent(input$mymap_draw_edited_features, {
+    for (feature in input$mymap_draw_edited_features$features){
+        values$analysis_data <- move_point(feature, values$analysis_data)
+      }
+    })
+
+  #delete points = actually just marks them not to display
+  observeEvent(input$mymap_draw_deleted_features, {
+    for (feature in input$mymap_draw_deleted_features$features){
+      values$analysis_data <- delete_point(feature, values$analysis_data)
+    }
+    
+  })
+  
+############################
+
+  output$validation <- shiny::renderPrint({
+    data <- csvPointsInput()
     if (! is.data.frame(data)) {
       data
     }
     msg <- c(
-      check_complete_(data, c("longitude", "latitude", "id")),
+      check_rounded_(data, "longitude"),
+      check_complete_(data, c("longitude", "latitude")),
       check_range_(data, "longitude", -180, 180),
       check_range_(data, "latitude", -90, 90),
       check_rounded_(data, "longitude"),
@@ -279,12 +299,11 @@ server <- function(input, output, session) {
       check_zeros_(data, "longitude"),
       check_zeros_(data, "latitude")
     )
-    
     if (! is.null(msg)) {
       msg
     }
   })
-  
+
   output$gbifValidation <- shiny::renderPrint({
     data <- gbifPointsInput()
     if (nrow(data) == 0) {
@@ -292,16 +311,32 @@ server <- function(input, output, session) {
     }
   })
   
-  shiny::observeEvent(req(sum(values$analysis_data$group == "csv") > 0), {
+  observeEvent(req(nrow(values$analysis_data) > 0), {
     shinyjs::enable("Analysis")
+  }, once=TRUE)
+  
+  shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "User CSV") > 0), {
     shinyjs::enable("csv_onoff")
     shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
-  })
+  }, once=TRUE)
   
-  shiny::observeEvent(req(sum(values$analysis_data$group == "gbif") > 0), {
-    shinyjs::enable("Analysis")
+  shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "GBIF") > 0), {
     shinyjs::enable("gbif_onoff")
     shinyWidgets::updateMaterialSwitch(session, "gbif_onoff", value=TRUE)
+  }, once=TRUE)
+  
+  observeEvent(input$csv_onoff, {
+    values$analysis_data <- values$analysis_data %>%
+      mutate(geocat_use=ifelse(geocat_source == "User CSV", input$csv_onoff, geocat_use)) %>%
+      # make sure deleted points aren't turned back on
+      mutate(geocat_use=ifelse(geocat_deleted, FALSE, geocat_use))
+  })
+  
+  observeEvent(input$gbif_onoff, {
+    values$analysis_data <- values$analysis_data %>%
+      mutate(geocat_use=ifelse(geocat_source == "GBIF", input$gbif_onoff, geocat_use)) %>%
+      # make sure deleted points aren't turned back on
+      mutate(geocat_use=ifelse(geocat_deleted, FALSE, geocat_use))
   })
   
   shiny::observeEvent(input$queryPOWO, {
@@ -321,79 +356,40 @@ server <- function(input, output, session) {
           weight = 2,
           fillColor = "red") 
      
-})
+  })
 
-  shiny::observeEvent(input$csv_in, {
-    
-    df <- csvpointsInput()
-    
-    leaflet::leafletProxy("mymap", data=df) %>%
-      
-      # zoom to fit - can we buffer this a little?
-      leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-      
-      leaflet::addCircleMarkers(group = "View Points",
-                                lng = ~longitude,
-                                lat = ~latitude,
-                                radius = 7,
-                                color = "#FFFFFF",
-                                stroke = T,
-                                fillOpacity = 1,
-                                fill = T,
-                                fillColor = "#0070ff",
-                                popup = as.character(df$id))
-  })
-  
-  shiny::observeEvent(input$queryGBIF, {
-    df <- gbifPointsInput()
-    leaflet::leafletProxy("mymap", data=df) %>%
-      
-      # zoom to fit - can we buffer this a little?
-      leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-      
-      leaflet::addCircleMarkers(group = "View GBIF Points",
-                                lng = ~longitude,
-                                lat = ~latitude,
-                                radius = 7,
-                                color = "#FFFFFF",
-                                stroke = T,
-                                fillOpacity = 1,
-                                fill = T,
-                                fillColor = "#ff69b4",
-                                popup = as.character(df$catalogNumber))
-  })
-  
   #output to analysis on/off switch
-  calculateAnalysis <- eventReactive(list(input$Analysis, input$gbif_onoff, input$csv_onoff), {
+  calculateAnalysis <- eventReactive(list(input$Analysis, values$analysis_data), {
     if (input$Analysis) {
-      points <- values$analysis_data
-      
-      if (!input$gbif_onoff) {
-        points <- filter(points, group != "gbif")
-      }
-      
-      if (!input$csv_onoff) {
-        points <- filter(points, group != "csv")
-      }
+      points <- filter(values$analysis_data, geocat_use)
       
       points <- select(points, longitude, latitude)
       
-      projected_points <- simProjWiz(points)
-
-      EOO <- eoosh(projected_points$p)
-      AOO <- aoosh(projected_points$p)
-
-      eoo_rating <- ratingEoo(EOO$area, abb=TRUE)
-      aoo_rating <- ratingAoo(AOO$area, abb=TRUE)
-      
-      values$eooarea <- EOO$area
-      values$aooarea <- AOO$area
-      values$aoo_polygon <- AOO$polysf
-      values$eoo_polygon <- EOO$polysf
-      values$eoo_rating <- eoo_rating
-      values$aoo_rating <- aoo_rating
-      
-      list(eoo=EOO, aoo=AOO, eoo_rating=eoo_rating, aoo_rating=aoo_rating)
+      if (nrow(points) > 0) {
+        projected_points <- simProjWiz(points)
+  
+        EOO <- eoosh(projected_points$p)
+        AOO <- aoosh(projected_points$p)
+  
+        eoo_rating <- ratingEoo(EOO$area, abb=TRUE)
+        aoo_rating <- ratingAoo(AOO$area, abb=TRUE)
+        
+        values$eooarea <- EOO$area
+        values$aooarea <- AOO$area
+        values$aoo_polygon <- AOO$polysf
+        values$eoo_polygon <- EOO$polysf
+        values$eoo_rating <- eoo_rating
+        values$aoo_rating <- aoo_rating
+        
+        list(eoo=EOO, aoo=AOO, eoo_rating=eoo_rating, aoo_rating=aoo_rating)
+      } else {
+        values$eooarea <- NULL
+        values$aooarea <- NULL
+        values$aoo_polygon <- NULL
+        values$eoo_polygon <- NULL
+        values$eoo_rating <- NULL
+        values$aoo_rating <- NULL
+      }
     }
   })
   
@@ -407,19 +403,21 @@ server <- function(input, output, session) {
   output$text <- renderUI({
     if (input$Analysis){
       results <- calculateAnalysis()
-      eoo_str <-
-        paste("Extent of occurrence (EOO): ",
-              format(round(as.numeric(results$eoo$area)), big.mark=","),
-              "km<sup>2</sup>", "-", results$eoo_rating)
-      
-      aoo_str <-
-        paste("Area of occupancy (AOO): ",
-              format(round(as.numeric(results$aoo$area)), big.mark=","),
-              "km<sup>2</sup>", "-", results$aoo_rating)
-      
-      results_html <- HTML(paste(eoo_str, aoo_str, sep='<br>'))
-                           
-      HTML(paste0("<p style='color:orange;'>", results_html, "</p>"))
+      if (! is.null(results)) {
+        eoo_str <-
+          paste("Extent of occurrence (EOO): ",
+                format(round(as.numeric(results$eoo$area)), big.mark=","),
+                "km<sup>2</sup>", "-", results$eoo_rating)
+        
+        aoo_str <-
+          paste("Area of occupancy (AOO): ",
+                format(round(as.numeric(results$aoo$area)), big.mark=","),
+                "km<sup>2</sup>", "-", results$aoo_rating)
+        
+        results_html <- HTML(paste(eoo_str, aoo_str, sep='<br>'))
+                             
+        HTML(paste0("<p style='color:orange;'>", results_html, "</p>"))
+      }
     }
   })
   
@@ -431,7 +429,7 @@ server <- function(input, output, session) {
       paste(species_name, "_", date, ".csv", sep = "" )
     },
     content = function(file){
-      df = csvpointsInput()
+      df = csvPointsInput()
       # merge with sis format
       df <- dplyr::bind_cols(df,sis_format)
       df$dec_lat <- df$latitude
@@ -442,10 +440,42 @@ server <- function(input, output, session) {
     }
   )
   
+  # csv file download handler
+  output$download_csv = downloadHandler(
+    filename = function(){
+      date <- format(Sys.Date(), "%Y%m%d")
+      species_name <- "sh_geocat" #needs to come from something useful
+      paste(species_name, "_", date, ".csv", sep = "" )
+    },
+    content = function(file){
+      write_csv(values$analysis_data, file)
+    }
+  )
+  
+  observeEvent(req(nrow(values$analysis_data) > 0), {
+    pal <- colorFactor(
+      palette=c("#509E2F", "#0078b4", "#ECAC7C"),
+      domain=c("GBIF", "User CSV", "User point")
+    )
+    #note use geo_use to mark point not needed for analysis, points are not deleted
+    leafletProxy("mymap", data=values$analysis_data[values$analysis_data$geocat_use,]) %>%
+    leaflet::addCircleMarkers(popup = "popup",#~thetext,
+                              layerId = ~geocat_id,
+                              group="mappoints",
+                              radius = 7,
+                              color="#FFFFFF",
+                              stroke = T,
+                              weight = 2.5,
+                              fill = T,
+                              fillColor = ~pal(geocat_source),
+                              fillOpacity = 0.5,
+                              options = markerOptions(draggable = FALSE))
+  })
+  
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
-    if (input$Analysis){
-        leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
-        leaflet::clearGroup("AOOpolys") %>%
+    
+    if (input$Analysis & !is.null(values$aoo_polygon)){
+      leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
         leaflet::addPolygons(
           color = "#000000",
           stroke = T,
@@ -455,7 +485,12 @@ server <- function(input, output, session) {
           fillColor = "red",
           group = "AOOpolys"
         )
-      
+    } else {
+      leafletProxy("mymap") %>%
+        clearGroup("AOOpolys")
+    }
+    
+    if (input$Analysis & !is.null(values$eoo_polygon)) {
       leaflet::leafletProxy("mymap", data=values$eoo_polygon) %>%
         leaflet::clearGroup("EOOpolys") %>%
         leaflet::addPolygons(
@@ -467,13 +502,9 @@ server <- function(input, output, session) {
           fillColor = "grey",
           group = "EOOpolys"
         )
-      
     } else {
       leaflet::leafletProxy("mymap") %>%
-        # clear previous polygons
-        leaflet::clearGroup("EOOpolys") %>%
-        leaflet::clearGroup("AOOpolys")
-      
+        leaflet::clearGroup("EOOpolys")
     }
     
   })
