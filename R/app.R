@@ -264,7 +264,8 @@ server <- function(input, output, session) {
   observeEvent(input$mymap_draw_new_feature, {
     point_data <- add_point(input$mymap_draw_new_feature)
     values$analysis_data <- bind_rows(values$analysis_data, point_data)
-  })
+    t <- 0
+    })
   
   #move points
   observeEvent(input$mymap_draw_edited_features, {
@@ -455,7 +456,7 @@ server <- function(input, output, session) {
     points <- filter(values$analysis_data, ! geocat_deleted)
     
     used_pal <- colorFactor(
-      palette=c("#509E2F", "#0078b4", "#ECAC7C"),
+      palette=c("#66C2A5", "#FC8D62", "#8DA0CB"),
       domain=c("GBIF", "User CSV", "User point")
     )
     
@@ -482,16 +483,15 @@ server <- function(input, output, session) {
     unused_points <- filter(points, ! geocat_use)
     
     leafletProxy("mymap", data=unused_points) %>%
-      leaflet::addCircleMarkers(popup = "popup",#~thetext,
-                                layerId = ~geocat_id,
-                                group="mappoints",
+      leaflet::addCircleMarkers(layerId = ~geocat_id,
+                                group="mappoints_nu",
                                 radius = 7,
                                 color="#BBBBBB",
                                 stroke = T,
-                                weight = 2.5,
+                                weight = 2,
                                 fill = T,
                                 fillColor = ~unused_pal(geocat_source),
-                                fillOpacity = 0.5,
+                                fillOpacity = 0.2,
                                 options = markerOptions(draggable = FALSE))
   })
   
