@@ -57,7 +57,7 @@ eoosh <- function(points) {
   #to geographic
   p1 <- sf::st_transform(p1,4326)
   #dealing with dateline
-  p1 <- sf::st_wrap_dateline(p1)
+  p1 <- sf::st_wrap_dateline(p1,options=c("WRAPDATELINE=YES", "DATELINEOFFSET=180"))
 
  list(area = area,polysf = p1)
   
