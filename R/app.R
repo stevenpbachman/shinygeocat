@@ -229,30 +229,52 @@ server <- function(input, output, session) {
         completedColor = "#241ad9"
       ) %>%
       
+      addTiles() %>%
+      
       leaflet::addProviderTiles(
-        provider = "Esri.WorldImagery",
-        #provider$Esri.WorldImagery,
-        group = "ESRI World Imagery (default)",
-        options = leaflet::providerTileOptions(noWrap = TRUE)
+        provider = "CartoDB.Voyager",
+        group = "CartoDB Voyager",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
       )  %>%
       
       leaflet::addProviderTiles(
         provider = "OpenStreetMap.Mapnik",
         group = "Open Street Map",
-        options = leaflet::providerTileOptions(noWrap = TRUE)
+        options = leaflet::providerTileOptions(noWrap = FALSE)
       )  %>%
       
       leaflet::addProviderTiles(
-        provider = "OpenTopoMap",
-        #provider$OpenTopoMap,
-        group = "Open Topo Map",
-        options = leaflet::providerTileOptions(noWrap = TRUE))  %>%
+        provider = "Esri.WorldImagery",
+        group = "ESRI World Imagery (default)",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
+      )  %>%
+      
+      leaflet::addProviderTiles(
+        provider = "Esri.WorldTopoMap",
+         group = "Esri World Topo Map",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
+        )  %>%
+      
+      leaflet::addProviderTiles(
+        provider = "Stamen.Toner",
+        group = "Stamen Toner",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
+      )  %>%
+      
+      leaflet::addProviderTiles(
+        provider = "Stamen.TonerLite",
+        group = "Stamen Toner Lite",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
+      )  %>%
       
       leaflet::addLayersControl(
         baseGroups = c(
-          "ESRI World Imagery",
+          "CartoDB Voyager",
           "Open Street Map",
-          "Open Topo Map"
+          "ESRI World Imagery",
+          "Esri World Topo Map",
+          "Stamen Toner",
+          "Stamen Toner Lite"
         ),
         options = leaflet::layersControlOptions(collapsed = TRUE)
       )
@@ -456,7 +478,7 @@ server <- function(input, output, session) {
     points <- filter(values$analysis_data, ! geocat_deleted)
     
     used_pal <- colorFactor(
-      palette=c("#66C2A5", "#FC8D62", "#8DA0CB"),
+      palette=c("#509E2F", "#0078b4", "#e41a1c"),
       domain=c("GBIF", "User CSV", "User point")
     )
     
