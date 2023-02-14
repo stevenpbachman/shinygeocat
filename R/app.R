@@ -452,12 +452,16 @@ server <- function(input, output, session) {
   )
   
   observeEvent(req(nrow(values$analysis_data) > 0), {
-    pal <- colorFactor(
+    points <- filter(values$analysis_data, ! geocat_deleted)
+    
+    used_pal <- colorFactor(
       palette=c("#509E2F", "#0078b4", "#ECAC7C"),
       domain=c("GBIF", "User CSV", "User point")
     )
-    #note use geo_use to mark point not needed for analysis, points are not deleted
-    leafletProxy("mymap", data=values$analysis_data[values$analysis_data$geocat_use,]) %>%
+    
+    used_points <- filter(points, geocat_use)
+    
+    leafletProxy("mymap", data=used_points) %>%
     leaflet::addCircleMarkers(popup = "popup",#~thetext,
                               layerId = ~geocat_id,
                               group="mappoints",
@@ -466,9 +470,29 @@ server <- function(input, output, session) {
                               stroke = T,
                               weight = 2.5,
                               fill = T,
-                              fillColor = ~pal(geocat_source),
+                              fillColor = ~used_pal(geocat_source),
                               fillOpacity = 0.5,
                               options = markerOptions(draggable = FALSE))
+    
+    unused_pal <- colorFactor(
+      palette=c("#a5cd96", "#7fbbd9", "#f5d5bd"),
+      domain=c("GBIF", "User CSV", "User point")
+    )
+    
+    unused_points <- filter(points, ! geocat_use)
+    
+    leafletProxy("mymap", data=unused_points) %>%
+      leaflet::addCircleMarkers(popup = "popup",#~thetext,
+                                layerId = ~geocat_id,
+                                group="mappoints",
+                                radius = 7,
+                                color="#BBBBBB",
+                                stroke = T,
+                                weight = 2.5,
+                                fill = T,
+                                fillColor = ~unused_pal(geocat_source),
+                                fillOpacity = 0.5,
+                                options = markerOptions(draggable = FALSE))
   })
   
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
