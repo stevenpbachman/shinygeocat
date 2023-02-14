@@ -17,6 +17,7 @@ Imports:
     here,
     htmltools,
     kewr,
+    leafem,
     leaflet,
     leaflet.extras,
     magrittr,
