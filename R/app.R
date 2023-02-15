@@ -344,21 +344,18 @@ server <- function(input, output, session) {
   })
   
   shiny::observeEvent(input$queryPOWO, {
-    
+    bb <- sf::st_bbox(powo_range())
       leaflet::leafletProxy("mymap") %>%
-      
-      #bb <- sf::st_bbox(powo_range()) %>%
-      
-      #leaflet::fitBounds(bb[1],bb[2], bb[3], bb[4]) %>%
+      leaflet::clearGroup("powopolys") %>%
+      #zoom to
+      leaflet::fitBounds(bb[[1]], bb[[2]], bb[[3]], bb[[4]]) %>%
 
-      # zoom to fit - can we buffer this a little?
-      #leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-     
-        leaflet::addPolygons(
+    leaflet::addPolygons(
           data = powo_range(),
           color = "red",
           weight = 2,
-          fillColor = "red") 
+          fillColor = "red",
+          group = "powopolys") 
      
   })
 
@@ -505,6 +502,7 @@ server <- function(input, output, session) {
     
     if (input$Analysis & !is.null(values$aoo_polygon)){
       leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
+        leaflet::clearGroup("AOOpolys") %>%
         leaflet::addPolygons(
           color = "#000000",
           stroke = T,
