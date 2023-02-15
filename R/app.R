@@ -235,30 +235,52 @@ server <- function(input, output, session) {
         completedColor = "#241ad9"
       ) %>%
       
+      addTiles() %>%
+      
       leaflet::addProviderTiles(
-        provider = "Esri.WorldImagery",
-        #provider$Esri.WorldImagery,
-        group = "ESRI World Imagery (default)",
-        options = leaflet::providerTileOptions(noWrap = TRUE)
+        provider = "CartoDB.Voyager",
+        group = "CartoDB Voyager",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
       )  %>%
       
       leaflet::addProviderTiles(
         provider = "OpenStreetMap.Mapnik",
         group = "Open Street Map",
-        options = leaflet::providerTileOptions(noWrap = TRUE)
+        options = leaflet::providerTileOptions(noWrap = FALSE)
       )  %>%
       
       leaflet::addProviderTiles(
-        provider = "OpenTopoMap",
-        #provider$OpenTopoMap,
-        group = "Open Topo Map",
-        options = leaflet::providerTileOptions(noWrap = TRUE))  %>%
+        provider = "Esri.WorldImagery",
+        group = "ESRI World Imagery (default)",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
+      )  %>%
+      
+      leaflet::addProviderTiles(
+        provider = "Esri.WorldTopoMap",
+         group = "Esri World Topo Map",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
+        )  %>%
+      
+      leaflet::addProviderTiles(
+        provider = "Stamen.Toner",
+        group = "Stamen Toner",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
+      )  %>%
+      
+      leaflet::addProviderTiles(
+        provider = "Stamen.TonerLite",
+        group = "Stamen Toner Lite",
+        options = leaflet::providerTileOptions(noWrap = FALSE)
+      )  %>%
       
       leaflet::addLayersControl(
         baseGroups = c(
-          "ESRI World Imagery",
+          "CartoDB Voyager",
           "Open Street Map",
-          "Open Topo Map"
+          "ESRI World Imagery",
+          "Esri World Topo Map",
+          "Stamen Toner",
+          "Stamen Toner Lite"
         ),
         options = leaflet::layersControlOptions(collapsed = TRUE)
       )
@@ -269,7 +291,8 @@ server <- function(input, output, session) {
   observeEvent(input$mymap_draw_new_feature, {
     point_data <- add_point(input$mymap_draw_new_feature)
     values$analysis_data <- bind_rows(values$analysis_data, point_data)
-  })
+    t <- 0
+    })
   
   #move points
   observeEvent(input$mymap_draw_edited_features, {
@@ -482,20 +505,19 @@ server <- function(input, output, session) {
                               fill = T,
                               fillColor = ~used_pal(geocat_source),
                               fillOpacity = 0.5,
-                              options = markerOptions(draggable = FALSE),
-                              data=used_points) %>%
-      leaflet::addCircleMarkers(popup = "popup",#~thetext,
-                                layerId = ~geocat_id,
-                                group="mappoints",
+                              options = markerOptions(draggable = FALSE))
+    
+    leafletProxy("mymap", data=unused_points) %>%
+      leaflet::addCircleMarkers(layerId = ~geocat_id,
+                                group="mappoints_nu",
                                 radius = 7,
                                 color="#BBBBBB",
                                 stroke = T,
-                                weight = 2.5,
+                                weight = 2,
                                 fill = T,
                                 fillColor = ~unused_pal(geocat_source),
-                                fillOpacity = 0.5,
-                                options = markerOptions(draggable = FALSE),
-                                data=unused_points)
+                                fillOpacity = 0.2,
+                                options = markerOptions(draggable = FALSE))
   })
   
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
