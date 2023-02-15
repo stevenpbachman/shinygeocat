@@ -210,16 +210,22 @@ server <- function(input, output, session) {
      
       leafem::addMouseCoordinates() %>%
       
-      ######################################################
-      #JM
       leaflet.extras::addDrawToolbar(editOptions = editToolbarOptions(edit=TRUE),
                                      targetGroup = 'mappoints',
-                                     circleMarkerOptions=FALSE,
+                                     circleMarkerOptions=drawCircleMarkerOptions(
+                                       color="#FFFFFF",
+                                       stroke=T,
+                                       weight=2.5,
+                                       fill=T,
+                                       fillColor="#ECAC7C",
+                                       opacity=1,
+                                       fillOpacity=0.5
+                                      ),
+                                     markerOptions=FALSE,
                                      rectangleOptions=FALSE,
                                      circleOptions=FALSE,
                                      polygonOptions=FALSE,
                                      polylineOptions=FALSE) %>%
-      #####################################################
 
       leaflet::addMeasure(
         position = "bottomleft",
@@ -281,7 +287,6 @@ server <- function(input, output, session) {
     })
 
 #####Map Events############
-##JM
   #add new point
   observeEvent(input$mymap_draw_new_feature, {
     point_data <- add_point(input$mymap_draw_new_feature)
@@ -362,21 +367,18 @@ server <- function(input, output, session) {
   })
   
   shiny::observeEvent(input$queryPOWO, {
-    
+    bb <- sf::st_bbox(powo_range())
       leaflet::leafletProxy("mymap") %>%
-      
-      #bb <- sf::st_bbox(powo_range()) %>%
-      
-      #leaflet::fitBounds(bb[1],bb[2], bb[3], bb[4]) %>%
+      leaflet::clearGroup("powopolys") %>%
+      #zoom to
+      leaflet::fitBounds(bb[[1]], bb[[2]], bb[[3]], bb[[4]]) %>%
 
-      # zoom to fit - can we buffer this a little?
-      #leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-     
-        leaflet::addPolygons(
+    leaflet::addPolygons(
           data = powo_range(),
           color = "red",
           weight = 2,
-          fillColor = "red") 
+          fillColor = "red",
+          group = "powopolys") 
      
   })
 
@@ -476,15 +478,23 @@ server <- function(input, output, session) {
   
   observeEvent(req(nrow(values$analysis_data) > 0), {
     points <- filter(values$analysis_data, ! geocat_deleted)
+    # user points are plotted from the marker tools events not this one
+    points <- filter(values$analysis_data, geocat_source != "User point")
     
     used_pal <- colorFactor(
-      palette=c("#509E2F", "#0078b4", "#e41a1c"),
-      domain=c("GBIF", "User CSV", "User point")
+      palette=c("#509E2F", "#0078b4"),
+      domain=c("GBIF", "User CSV")
+    )
+    
+    unused_pal <- colorFactor(
+      palette=c("#a5cd96", "#7fbbd9"),
+      domain=c("GBIF", "User CSV")
     )
     
     used_points <- filter(points, geocat_use)
+    unused_points <- filter(points, ! geocat_use)
     
-    leafletProxy("mymap", data=used_points) %>%
+    leafletProxy("mymap") %>%
     leaflet::addCircleMarkers(popup = "popup",#~thetext,
                               layerId = ~geocat_id,
                               group="mappoints",
@@ -496,13 +506,6 @@ server <- function(input, output, session) {
                               fillColor = ~used_pal(geocat_source),
                               fillOpacity = 0.5,
                               options = markerOptions(draggable = FALSE))
-    
-    unused_pal <- colorFactor(
-      palette=c("#a5cd96", "#7fbbd9", "#f5d5bd"),
-      domain=c("GBIF", "User CSV", "User point")
-    )
-    
-    unused_points <- filter(points, ! geocat_use)
     
     leafletProxy("mymap", data=unused_points) %>%
       leaflet::addCircleMarkers(layerId = ~geocat_id,
@@ -521,6 +524,7 @@ server <- function(input, output, session) {
     
     if (input$Analysis & !is.null(values$aoo_polygon)){
       leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
+        leaflet::clearGroup("AOOpolys") %>%
         leaflet::addPolygons(
           color = "#000000",
           stroke = T,

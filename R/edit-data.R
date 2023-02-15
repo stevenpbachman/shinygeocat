@@ -32,6 +32,10 @@ add_point <- function(feature) {
 
 move_point <- function(feature, point_tbl) {
   id <- feature$properties$layerId
+  if (is.null(id)) {
+    id <- paste0("user", feature$properties[["_leaflet_id"]])
+  }
+  
   new_lon <- feature$geometry$coordinates[[1]]
   new_lat <- feature$geometry$coordinates[[2]]
   
@@ -57,6 +61,10 @@ move_point <- function(feature, point_tbl) {
 
 delete_point <- function(feature, point_tbl) {
   id <- feature$properties$layerId
+  
+  if (is.null(id)) {
+    id <- paste0("user", feature$properties[["_leaflet_id"]])
+  }
   
   point_tbl %>%
     mutate(
