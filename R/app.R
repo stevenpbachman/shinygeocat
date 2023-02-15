@@ -339,18 +339,13 @@ server <- function(input, output, session) {
   })
   
   shiny::observeEvent(input$queryPOWO, {
-    
+    bb <- sf::st_bbox(powo_range())
       leaflet::leafletProxy("mymap") %>%
       leaflet::clearGroup("powopolys") %>%
-      
-      #bb <- sf::st_bbox(powo_range()) %>%
-      
-      #leaflet::fitBounds(bb[1],bb[2], bb[3], bb[4]) %>%
+      #zoom to
+      leaflet::fitBounds(bb[[1]], bb[[2]], bb[[3]], bb[[4]]) %>%
 
-      # zoom to fit - can we buffer this a little?
-      #leaflet::fitBounds(~min(longitude), ~min(latitude), ~max(longitude), ~max(latitude)) %>%
-     
-        leaflet::addPolygons(
+    leaflet::addPolygons(
           data = powo_range(),
           color = "red",
           weight = 2,
