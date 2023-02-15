@@ -233,20 +233,20 @@ server <- function(input, output, session) {
         provider = "Esri.WorldImagery",
         #provider$Esri.WorldImagery,
         group = "ESRI World Imagery (default)",
-        options = leaflet::providerTileOptions(noWrap = TRUE)
+        options = leaflet::providerTileOptions(noWrap = FALSE)
       )  %>%
       
       leaflet::addProviderTiles(
         provider = "OpenStreetMap.Mapnik",
         group = "Open Street Map",
-        options = leaflet::providerTileOptions(noWrap = TRUE)
+        options = leaflet::providerTileOptions(noWrap = FALSE)
       )  %>%
       
       leaflet::addProviderTiles(
         provider = "OpenTopoMap",
         #provider$OpenTopoMap,
         group = "Open Topo Map",
-        options = leaflet::providerTileOptions(noWrap = TRUE))  %>%
+        options = leaflet::providerTileOptions(noWrap = FALSE))  %>%
       
       leaflet::addLayersControl(
         baseGroups = c(
