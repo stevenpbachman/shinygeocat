@@ -341,6 +341,7 @@ server <- function(input, output, session) {
   shiny::observeEvent(input$queryPOWO, {
     
       leaflet::leafletProxy("mymap") %>%
+      leaflet::clearGroup("powopolys") %>%
       
       #bb <- sf::st_bbox(powo_range()) %>%
       
@@ -353,7 +354,8 @@ server <- function(input, output, session) {
           data = powo_range(),
           color = "red",
           weight = 2,
-          fillColor = "red") 
+          fillColor = "red",
+          group = "powopolys") 
      
   })
 
@@ -499,6 +501,7 @@ server <- function(input, output, session) {
     
     if (input$Analysis & !is.null(values$aoo_polygon)){
       leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
+        leaflet::clearGroup("AOOpolys") %>%
         leaflet::addPolygons(
           color = "#000000",
           stroke = T,
