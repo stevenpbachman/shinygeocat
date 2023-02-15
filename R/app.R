@@ -210,16 +210,22 @@ server <- function(input, output, session) {
      
       leafem::addMouseCoordinates() %>%
       
-      ######################################################
-      #JM
       leaflet.extras::addDrawToolbar(editOptions = editToolbarOptions(edit=TRUE),
                                      targetGroup = 'mappoints',
-                                     circleMarkerOptions=FALSE,
+                                     circleMarkerOptions=drawCircleMarkerOptions(
+                                       color="#FFFFFF",
+                                       stroke=T,
+                                       weight=2.5,
+                                       fill=T,
+                                       fillColor="#ECAC7C",
+                                       opacity=1,
+                                       fillOpacity=0.5
+                                      ),
+                                     markerOptions=FALSE,
                                      rectangleOptions=FALSE,
                                      circleOptions=FALSE,
                                      polygonOptions=FALSE,
                                      polylineOptions=FALSE) %>%
-      #####################################################
 
       leaflet::addMeasure(
         position = "bottomleft",
@@ -259,7 +265,6 @@ server <- function(input, output, session) {
     })
 
 #####Map Events############
-##JM
   #add new point
   observeEvent(input$mymap_draw_new_feature, {
     point_data <- add_point(input$mymap_draw_new_feature)
@@ -453,15 +458,23 @@ server <- function(input, output, session) {
   
   observeEvent(req(nrow(values$analysis_data) > 0), {
     points <- filter(values$analysis_data, ! geocat_deleted)
+    # user points are plotted from the marker tools events not this one
+    points <- filter(values$analysis_data, geocat_source != "User point")
     
     used_pal <- colorFactor(
-      palette=c("#509E2F", "#0078b4", "#ECAC7C"),
-      domain=c("GBIF", "User CSV", "User point")
+      palette=c("#509E2F", "#0078b4"),
+      domain=c("GBIF", "User CSV")
+    )
+    
+    unused_pal <- colorFactor(
+      palette=c("#a5cd96", "#7fbbd9"),
+      domain=c("GBIF", "User CSV")
     )
     
     used_points <- filter(points, geocat_use)
+    unused_points <- filter(points, ! geocat_use)
     
-    leafletProxy("mymap", data=used_points) %>%
+    leafletProxy("mymap") %>%
     leaflet::addCircleMarkers(popup = "popup",#~thetext,
                               layerId = ~geocat_id,
                               group="mappoints",
@@ -472,16 +485,8 @@ server <- function(input, output, session) {
                               fill = T,
                               fillColor = ~used_pal(geocat_source),
                               fillOpacity = 0.5,
-                              options = markerOptions(draggable = FALSE))
-    
-    unused_pal <- colorFactor(
-      palette=c("#a5cd96", "#7fbbd9", "#f5d5bd"),
-      domain=c("GBIF", "User CSV", "User point")
-    )
-    
-    unused_points <- filter(points, ! geocat_use)
-    
-    leafletProxy("mymap", data=unused_points) %>%
+                              options = markerOptions(draggable = FALSE),
+                              data=used_points) %>%
       leaflet::addCircleMarkers(popup = "popup",#~thetext,
                                 layerId = ~geocat_id,
                                 group="mappoints",
@@ -492,7 +497,8 @@ server <- function(input, output, session) {
                                 fill = T,
                                 fillColor = ~unused_pal(geocat_source),
                                 fillOpacity = 0.5,
-                                options = markerOptions(draggable = FALSE))
+                                options = markerOptions(draggable = FALSE),
+                                data=unused_points)
   })
   
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
