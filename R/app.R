@@ -291,8 +291,7 @@ server <- function(input, output, session) {
   observeEvent(input$mymap_draw_new_feature, {
     point_data <- add_point(input$mymap_draw_new_feature)
     values$analysis_data <- bind_rows(values$analysis_data, point_data)
-    t <- 0
-    })
+  })
   
   #move points
   observeEvent(input$mymap_draw_edited_features, {
@@ -503,30 +502,34 @@ server <- function(input, output, session) {
                       paste('<font size = "1">','<b>GeoCAT id</b>' , used_points$geocat_id,'<b>GeoCAT notes</b>', used_points$geocat_notes,'</font>')
     )
     
-    leafletProxy("mymap", data=used_points) %>%
-    leaflet::addCircleMarkers(popup = ~pcontent,
-                              layerId = ~geocat_id,
-                              group="mappoints",
-                              radius = 7,
-                              color="#FFFFFF",
-                              stroke = T,
-                              weight = 2.5,
-                              fill = T,
-                              fillColor = ~used_pal(geocat_source),
-                              fillOpacity = 0.5,
-                              options = markerOptions(draggable = FALSE))
-    
-    leafletProxy("mymap", data=unused_points) %>%
-      leaflet::addCircleMarkers(layerId = ~geocat_id,
-                                group="mappoints",
-                                radius = 7,
-                                color="#BBBBBB",
-                                stroke = T,
-                                weight = 2,
-                                fill = T,
-                                fillColor = ~unused_pal(geocat_source),
-                                fillOpacity = 0.2,
-                                options = markerOptions(draggable = FALSE))
+    leafletProxy("mymap") %>%
+      leaflet::addCircleMarkers(
+        popup = ~pcontent,
+        layerId = ~geocat_id,
+        group="mappoints",
+        radius = 7,
+        color="#FFFFFF",
+        stroke = T,
+        weight = 2.5,
+        fill = T,
+        fillColor = ~used_pal(geocat_source),
+        fillOpacity = 0.5,
+        options = markerOptions(draggable = FALSE),
+        data=used_points
+      ) %>%
+      leaflet::addCircleMarkers(
+        layerId = ~geocat_id,
+        group="mappoints",
+        radius = 7,
+        color="#BBBBBB",
+        stroke = T,
+        weight = 2,
+        fill = T,
+        fillColor = ~unused_pal(geocat_source),
+        fillOpacity = 0.2,
+        options = markerOptions(draggable = FALSE),
+        data=unused_points
+      )
   })
   
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
