@@ -493,9 +493,18 @@ server <- function(input, output, session) {
     
     used_points <- filter(points, geocat_use)
     unused_points <- filter(points, ! geocat_use)
+    #popup text content
+    pcontent <- paste(sep = '<br/>',
+                      paste('<b><i><font size = "3">',used_points$genus,used_points$specificEpithet,'</font></i></b>'),
+                      paste(sep='','<b>Latitude,Longitude </b>',used_points$latitude,',',used_points$longitude),
+                      paste('<b>locality</b>', used_points$locality,'<b>Uncertainty</b>',used_points$coordinateUncertaintyInMeters,'m'),
+                      paste('<b>Collector</b>',used_points$recorderBy, '<b>Year</b>', used_points$event_year),
+                      paste('<font size = "1">','<b>Catalog</b>', used_points$catalogNumber,'<b>Source</b>',used_points$source,'</font>'),
+                      paste('<font size = "1">','<b>GeoCAT id</b>' , used_points$geocat_id,'<b>GeoCAT notes</b>', used_points$geocat_notes,'</font>')
+    )
     
-    leafletProxy("mymap") %>%
-    leaflet::addCircleMarkers(popup = "popup",#~thetext,
+    leafletProxy("mymap", data=used_points) %>%
+    leaflet::addCircleMarkers(popup = ~pcontent,
                               layerId = ~geocat_id,
                               group="mappoints",
                               radius = 7,
@@ -509,7 +518,7 @@ server <- function(input, output, session) {
     
     leafletProxy("mymap", data=unused_points) %>%
       leaflet::addCircleMarkers(layerId = ~geocat_id,
-                                group="mappoints_nu",
+                                group="mappoints",
                                 radius = 7,
                                 color="#BBBBBB",
                                 stroke = T,
