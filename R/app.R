@@ -218,7 +218,7 @@ server <- function(input, output, session) {
                                        stroke=T,
                                        weight=2.5,
                                        fill=T,
-                                       fillColor="#C72424",
+                                       fillColor="#ECAC7C",
                                        opacity=1,
                                        fillOpacity=0.5
                                       ),
