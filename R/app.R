@@ -214,6 +214,7 @@ server <- function(input, output, session) {
                                      targetGroup = 'mappoints',
                                      circleMarkerOptions=drawCircleMarkerOptions(
                                        color="#FFFFFF",
+                                       radius=7,
                                        stroke=T,
                                        weight=2.5,
                                        fill=T,
