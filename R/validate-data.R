@@ -1,5 +1,62 @@
 # Functions to validate occurrences and occurrence files
 
+validate_csv <- function(df) {
+  # errors for essentials
+  msg <- check_fields_(df, c("longitude", "latitude"))
+  if (!is.null(msg)) {
+    return(list(msg=error_message(msg)))
+  }
+  
+  msg <- check_numeric_(df, c("longitude", "latitude"))
+  if (!is.null(msg)) {
+    return(list(msg=error_message(msg)))
+  }
+  
+  # warnings for things that are removed
+  msg <- warn_message(check_complete_(df, c("longitude", "latitude")))
+  validated <- mutate(
+    df, 
+    geocat_use=ifelse(is.na(longitude) | is.na(latitude), FALSE, geocat_use),
+    geocat_deleted=ifelse(is.na(longitude) | is.na(latitude), FALSE, geocat_deleted),
+    geocat_notes=ifelse(is.na(longitude) | is.na(latitude), "Missing coordinates", geocat_notes)
+  )
+  
+  msg <- c(msg, warn_message(check_range_(df, "longitude", -180, 180)))
+  validated <- mutate(
+    df, 
+    geocat_use=ifelse(longitude < -180 | longitude > 180, FALSE, geocat_use),
+    geocat_deleted=ifelse(longitude < -180 | longitude > 180, FALSE, geocat_deleted),
+    geocat_notes=ifelse(longitude < -180 | longitude > 180, "Longitude out of range", geocat_notes)
+  )
+  
+  msg <- c(msg, check_range_(df, "latitude", -90, 90))
+  validated <- mutate(
+    df, 
+    geocat_use=ifelse(latitude < -90 | latitude > 90, FALSE, geocat_use),
+    geocat_deleted=ifelse(latitude < -90 | latitude > 90, FALSE, geocat_deleted),
+    geocat_notes=ifelse(latitude < -90 | latitude > 90, "Latitude out of range", geocat_notes)
+  )
+  
+  # alerts for dubious things
+  msg <- c(msg, alert_message(check_rounded_(df, "longitude")))
+  msg <- c(msg, alert_message(check_rounded_(df, "latitude")))
+  
+  msg <- c(msg, alert_message(check_zeros_(df, "longitude")))
+  msg <- c(msg, alert_message(check_zeros_(df, "latitude")))
+  
+  list(valid_data=validated, msg=msg)
+}
+
+validate_gbif <- function(df) {
+  if (nrow(df) == 0) {
+    msg <- error_message("No records found in GBIF. Check the name is in the GBIF backbone.")
+  } else {
+    msg <- NULL
+  }
+  
+  list(valid_data=df, msg=msg)
+}
+
 check_fields_ <- function(df, required_fields) {
   msg <- NULL
   

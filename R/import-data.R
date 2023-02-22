@@ -32,6 +32,7 @@ import_csv <- function(path) {
   data$geocat_source <- "User CSV"
   data$geocat_deleted <- FALSE
   data$geocat_id <- paste0("csv", seq(1, nrow(data)))
+  data$geocat_notes <- NA_character_
   
   data
 }
@@ -62,10 +63,15 @@ import_gbif <- function(name, limit=900) {
   }
   
   points <- gbif_points_(points)
+  if (nrow(points) == 0) {
+    return(empty_tbl_())
+  }
+  
   points$geocat_use <- TRUE
   points$geocat_deleted <- FALSE
   points$geocat_source <- "GBIF"
   points$geocat_id <- paste0("gbif", seq(1, nrow(points)))
+  points$geocat_notes <- NA_character_
   
   points
 }
