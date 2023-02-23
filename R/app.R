@@ -42,12 +42,12 @@ geocatApp <- function(...) {
       
       shiny::fluidRow(
         column(
-          6, align = "left", 
+          3, align = "left", 
           shinyjs::disabled(
             ## csv points on/off ----
             shinyWidgets::prettySwitch(
               inputId = "csv_onoff",
-              label = "User occurrences",
+              label = "CSV",
               value = FALSE,
               status = "primary",
               fill = TRUE
@@ -58,19 +58,34 @@ geocatApp <- function(...) {
           ),
         ),
         column(
-          6, align = "left", 
+          3, align = "left", 
           shinyjs::disabled(
             ## GBIF points on/off ----
             shinyWidgets::prettySwitch(
               inputId = "gbif_onoff",
-              label = "GBIF occurrences",
+              label = "GBIF",
               value = FALSE,
               status = "success",
               fill = TRUE
             )
           ),
+        ),
+        column(
+          3, align = "left", 
+          shinyjs::disabled(
+            ## non-native points on/off ----
+            shinyWidgets::prettySwitch(
+              inputId = "native_onoff",
+              label = "Exclude non-native",
+              value = FALSE,
+              status = "danger",
+              fill = TRUE
+            )
+          ),
         )
       ),
+      
+      br(),
       
       shiny::fluidRow(
         ## CSV input widget ----
@@ -208,6 +223,8 @@ server <- function(input, output, session) {
   
   powo_range <- shiny::eventReactive(input$powo_id, {
     geoms <- native_geom(input$powo_id)
+
+    values$native_geom <- geoms
     
     msg <- glue::glue("Loaded {nrow(geoms)} native regions from POWO for taxon {input$powo_id}")
     values$messages <- c(values$messages, info_message(msg))
@@ -218,6 +235,23 @@ server <- function(input, output, session) {
   output$messages <- renderPrint({
     glue::glue_collapse(values$messages, sep="\n<br>\n")
   })
+  
+  observeEvent(input$queryGBIF, {
+    shinyWidgets::updateMaterialSwitch(session, "native_onoff", value=FALSE)
+  })
+  
+  observeEvent(input$csv_in, {
+    shinyWidgets::updateMaterialSwitch(session, "native_onoff", value=FALSE)
+  })
+  
+  shiny::observeEvent(list(values$analysis_data, values$native_geom), {
+    if (!is.null(values$native_geom) & nrow(values$analysis_data) > 0) {
+      values$analysis_data <- flag_native(values$analysis_data, values$native_geom)
+      
+      msg <- glue::glue("Found {sum(values$analysis_data$geocat_native)} points outside native range")
+      values$messages <- c(values$messages, alert_message(msg))
+    }
+  }, ignoreNULL=TRUE, ignoreInit=TRUE)
   
   # leaflet base output map ----
   output$mymap <- leaflet::renderLeaflet({
@@ -369,6 +403,17 @@ server <- function(input, output, session) {
       mutate(geocat_use=ifelse(geocat_deleted, FALSE, geocat_use))
   })
   
+  observeEvent(input$native_onoff, {
+    values$analysis_data <- values$analysis_data %>%
+      mutate(geocat_use=ifelse(geocat_native, geocat_use, !input$native_onoff)) %>%
+      # make sure deleted points aren't turned back on
+      mutate(geocat_use=ifelse(geocat_deleted, FALSE, geocat_use))
+  }, ignoreInit=TRUE, ignoreNULL=TRUE)
+  
+  shiny::observeEvent(req(nrow(values$native_geom) > 0), {
+    shinyjs::enable("native_onoff")
+  })
+  
   shiny::observeEvent(input$queryPOWO, {
     bb <- sf::st_bbox(powo_range())
       leaflet::leafletProxy("mymap") %>%
@@ -390,9 +435,8 @@ server <- function(input, output, session) {
     if (input$Analysis) {
       points <- filter(values$analysis_data, geocat_use)
       
-      points <- select(points, longitude, latitude)
-      
       if (nrow(points) > 0) {
+        points <- select(points, longitude, latitude)
         projected_points <- simProjWiz(points)
   
         EOO <- eoosh(projected_points$p)
@@ -444,6 +488,8 @@ server <- function(input, output, session) {
         results_html <- HTML(paste(eoo_str, aoo_str, sep='<br>'))
                              
         HTML(paste0("<p style='color:orange;'>", results_html, "</p>"))
+      } else {
+        HTML("<p style='color:red;'> No valid points found</p>")
       }
     }
   })
@@ -537,7 +583,7 @@ server <- function(input, output, session) {
   })
   
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
-    
+
     if (input$Analysis & !is.null(values$aoo_polygon)){
       leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
         leaflet::clearGroup("AOOpolys") %>%
