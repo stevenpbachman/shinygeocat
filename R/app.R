@@ -185,6 +185,9 @@ server <- function(input, output, session) {
       values$analysis_data <- bind_rows(values$analysis_data, valid_points)  
     }
     
+    msg <- glue::glue("Loaded {sum(valid_points$geocat_use)} points from a CSV")
+    values$messages <- c(values$messages, info_message(msg))
+    
     valid_points
   })
   
@@ -197,11 +200,19 @@ server <- function(input, output, session) {
     valid_points <- validated$valid_data
     values$analysis_data <- bind_rows(values$analysis_data, valid_points)
     
+    msg <- glue::glue("Loaded {nrow(valid_points)} points for <i>{input$gbif_name}</i> from GBIF")
+    values$messages <- c(values$messages, info_message(msg))
+    
     valid_points
   })
   
   powo_range <- shiny::eventReactive(input$powo_id, {
-    native_geom(input$powo_id)
+    geoms <- native_geom(input$powo_id)
+    
+    msg <- glue::glue("Loaded {nrow(geoms)} native regions from POWO for taxon {input$powo_id}")
+    values$messages <- c(values$messages, info_message(msg))
+      
+    geoms
   })
   
   output$messages <- renderPrint({
@@ -304,21 +315,29 @@ server <- function(input, output, session) {
   observeEvent(input$mymap_draw_new_feature, {
     point_data <- add_point(input$mymap_draw_new_feature)
     values$analysis_data <- bind_rows(values$analysis_data, point_data)
+    
+    msg <- format_new_point(input$mymap_draw_new_feature)
+    values$messages <- c(values$messages, info_message(msg))
   })
   
   #move points
   observeEvent(input$mymap_draw_edited_features, {
     for (feature in input$mymap_draw_edited_features$features){
-        values$analysis_data <- move_point(feature, values$analysis_data)
-      }
-    })
+      values$analysis_data <- move_point(feature, values$analysis_data)
+      
+      msg <- format_move_point(feature)
+      values$messages <- c(values$messages, info_message(msg))
+    }
+  })
 
   #delete points = actually just marks them not to display
   observeEvent(input$mymap_draw_deleted_features, {
     for (feature in input$mymap_draw_deleted_features$features){
       values$analysis_data <- delete_point(feature, values$analysis_data)
+      
+      msg <- format_delete_point(feature)
+      values$messages <- c(values$messages, info_message(msg))
     }
-    
   })
   
 ############################

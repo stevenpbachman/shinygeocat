@@ -17,24 +17,36 @@ validate_csv <- function(df) {
   validated <- mutate(
     df, 
     geocat_use=ifelse(is.na(longitude) | is.na(latitude), FALSE, geocat_use),
-    geocat_deleted=ifelse(is.na(longitude) | is.na(latitude), FALSE, geocat_deleted),
+    geocat_deleted=ifelse(is.na(longitude) | is.na(latitude), TRUE, geocat_deleted),
     geocat_notes=ifelse(is.na(longitude) | is.na(latitude), "Missing coordinates", geocat_notes)
   )
   
   msg <- c(msg, warn_message(check_range_(df, "longitude", -180, 180)))
   validated <- mutate(
-    df, 
-    geocat_use=ifelse(longitude < -180 | longitude > 180, FALSE, geocat_use),
-    geocat_deleted=ifelse(longitude < -180 | longitude > 180, FALSE, geocat_deleted),
-    geocat_notes=ifelse(longitude < -180 | longitude > 180, "Longitude out of range", geocat_notes)
-  )
+    validated, 
+    geocat_use=case_when(longitude < -180 ~ FALSE,
+                         longitude > 180 ~ FALSE, 
+                         TRUE ~ geocat_use),
+    geocat_deleted=case_when(longitude < -180 ~ TRUE,
+                             longitude > 180 ~ TRUE, 
+                             TRUE ~ geocat_deleted),
+    geocat_notes=case_when(longitude < -180 ~ "Longitude out of range",
+                           longitude > 180 ~ "Longitude out of range", 
+                           TRUE ~ geocat_notes)
+    )
   
   msg <- c(msg, check_range_(df, "latitude", -90, 90))
   validated <- mutate(
-    df, 
-    geocat_use=ifelse(latitude < -90 | latitude > 90, FALSE, geocat_use),
-    geocat_deleted=ifelse(latitude < -90 | latitude > 90, FALSE, geocat_deleted),
-    geocat_notes=ifelse(latitude < -90 | latitude > 90, "Latitude out of range", geocat_notes)
+    validated, 
+    geocat_use=case_when(latitude < -90 ~ FALSE,
+                         latitude > 90 ~ FALSE, 
+                         TRUE ~ geocat_use),
+    geocat_deleted=case_when(latitude < -90 ~ TRUE,
+                             latitude > 90 ~ TRUE, 
+                             TRUE ~ geocat_deleted),
+    geocat_notes=case_when(latitude < -90 ~ "Latitude out of range",
+                           latitude > 90 ~ "Latitude out of range", 
+                           TRUE ~ geocat_notes)
   )
   
   # alerts for dubious things
