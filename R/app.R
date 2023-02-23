@@ -224,7 +224,7 @@ server <- function(input, output, session) {
   powo_range <- shiny::eventReactive(input$powo_id, {
     geoms <- native_geom(input$powo_id)
 
-    values$native_geom <- geom
+    values$native_geom <- geoms
     
     msg <- glue::glue("Loaded {nrow(geoms)} native regions from POWO for taxon {input$powo_id}")
     values$messages <- c(values$messages, info_message(msg))
@@ -247,6 +247,9 @@ server <- function(input, output, session) {
   shiny::observeEvent(list(values$analysis_data, values$native_geom), {
     if (!is.null(values$native_geom) & nrow(values$analysis_data) > 0) {
       values$analysis_data <- flag_native(values$analysis_data, values$native_geom)
+      
+      msg <- glue::glue("Found {sum(values$analysis_data$geocat_native)} points outside native range")
+      values$messages <- c(values$messages, alert_message(msg))
     }
   }, ignoreNULL=TRUE, ignoreInit=TRUE)
   
