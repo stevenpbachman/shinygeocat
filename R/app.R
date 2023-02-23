@@ -144,15 +144,21 @@ geocatApp <- function(...) {
 
   #### Main panel for displaying outputs ####
   
-  shiny::mainPanel(#### main panel ####
-                   leaflet::leafletOutput(# map ----
-                                          "mymap", width = "100%", height = 650))
+  shiny::mainPanel(
+    # map ----
+    div(
+      leaflet::leafletOutput("mymap", width = "100%", height = 550)),
+      br(),
+      wellPanel(htmlOutput("messages"),
+                style = "overflow-y: scroll; height: 100px; display: flex; flex-direction: column-reverse")
+    )
   )
 
 ##### server #####
 server <- function(input, output, session) {
   values <- reactiveValues(
-    analysis_data=empty_tbl_()
+    analysis_data=empty_tbl_(),
+    messages=""
   )
   
   observeEvent(input$reset, {
@@ -161,39 +167,56 @@ server <- function(input, output, session) {
   
   ##################################
   # prepare the points
-  csvPointsInput <- shiny::eventReactive(input$csv_in, {
+  observeEvent(input$csv_in, {
     ext <- tools::file_ext(input$csv_in$datapath)
     if (ext == "csv") {
       data <- import_csv(input$csv_in$datapath)
     } else {
-      shiny::validate("Invalid file; please upload a .csv file")
+      msg <- error_message("Invalid file; please upload a .csv file")
+      values$messages <- c(values$messages, msg)
+      return()
     }
     
-    shiny::validate(check_fields_(data, c("longitude", "latitude")))
-    shiny::validate(check_numeric_(data, c("longitude", "latitude")))
+    validated <- validate_csv(data)
+    values$messages <- c(values$messages, validated$msg)
     
-    valid_points <- filter(data, longitude < 180, longitude > -180,
-                           latitude < 90, latitude > -90)
+    valid_points <- validated$valid_data
+    if (! is.null(valid_points)) {
+      values$analysis_data <- bind_rows(values$analysis_data, valid_points)  
+    }
     
-    values$analysis_data <- bind_rows(values$analysis_data, valid_points)
+    msg <- glue::glue("Loaded {sum(valid_points$geocat_use)} points from a CSV")
+    values$messages <- c(values$messages, info_message(msg))
     
     valid_points
   })
   
-  gbifPointsInput <- eventReactive(input$queryGBIF, {
+  observeEvent(input$queryGBIF, {
     points <- import_gbif(input$gbif_name)
     
-    if (nrow(points) == 0) {
-      points <- empty_tbl_()
-    }
+    validated <- validate_gbif(points)
+    values$messages <- c(values$messages, validated$msg)
     
-    values$analysis_data <- bind_rows(values$analysis_data, points)
+    valid_points <- validated$valid_data
+    values$analysis_data <- bind_rows(values$analysis_data, valid_points)
     
-    points
+    msg <- glue::glue("Loaded {nrow(valid_points)} points for <i>{input$gbif_name}</i> from GBIF")
+    values$messages <- c(values$messages, info_message(msg))
+    
+    valid_points
   })
   
   powo_range <- shiny::eventReactive(input$powo_id, {
-    native_geom(input$powo_id)
+    geoms <- native_geom(input$powo_id)
+    
+    msg <- glue::glue("Loaded {nrow(geoms)} native regions from POWO for taxon {input$powo_id}")
+    values$messages <- c(values$messages, info_message(msg))
+      
+    geoms
+  })
+  
+  output$messages <- renderPrint({
+    glue::glue_collapse(values$messages, sep="\n<br>\n")
   })
   
   # leaflet base output map ----
@@ -292,52 +315,32 @@ server <- function(input, output, session) {
   observeEvent(input$mymap_draw_new_feature, {
     point_data <- add_point(input$mymap_draw_new_feature)
     values$analysis_data <- bind_rows(values$analysis_data, point_data)
+    
+    msg <- format_new_point(input$mymap_draw_new_feature)
+    values$messages <- c(values$messages, info_message(msg))
   })
   
   #move points
   observeEvent(input$mymap_draw_edited_features, {
     for (feature in input$mymap_draw_edited_features$features){
-        values$analysis_data <- move_point(feature, values$analysis_data)
-      }
-    })
+      values$analysis_data <- move_point(feature, values$analysis_data)
+      
+      msg <- format_move_point(feature)
+      values$messages <- c(values$messages, info_message(msg))
+    }
+  })
 
   #delete points = actually just marks them not to display
   observeEvent(input$mymap_draw_deleted_features, {
     for (feature in input$mymap_draw_deleted_features$features){
       values$analysis_data <- delete_point(feature, values$analysis_data)
+      
+      msg <- format_delete_point(feature)
+      values$messages <- c(values$messages, info_message(msg))
     }
-    
   })
   
 ############################
-
-  output$validation <- shiny::renderPrint({
-    data <- csvPointsInput()
-    if (! is.data.frame(data)) {
-      data
-    }
-    msg <- c(
-      check_rounded_(data, "longitude"),
-      check_complete_(data, c("longitude", "latitude")),
-      check_range_(data, "longitude", -180, 180),
-      check_range_(data, "latitude", -90, 90),
-      check_rounded_(data, "longitude"),
-      check_rounded_(data, "latitude"),
-      check_zeros_(data, "longitude"),
-      check_zeros_(data, "latitude")
-    )
-    if (! is.null(msg)) {
-      msg
-    }
-  })
-
-  output$gbifValidation <- shiny::renderPrint({
-    data <- gbifPointsInput()
-    if (nrow(data) == 0) {
-      cat("No records found in GBIF.\nCheck the name is in the GBIF backbone.")
-    }
-  })
-  
   observeEvent(req(nrow(values$analysis_data) > 0), {
     shinyjs::enable("Analysis")
   }, once=TRUE)

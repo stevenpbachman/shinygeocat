@@ -11,13 +11,7 @@
 #' 
 add_point <- function(feature) {
   id <- paste0("user", feature$properties[["_leaflet_id"]])
-  note <- paste0(
-    "New point added at (",
-    feature$geometry$coordinates[[1]],
-    ",",
-    feature$geometry$coordinates[[2]],
-    ")"
-  )
+  note <- format_new_point(feature)
   
   tibble::tibble(
     latitude=feature$geometry$coordinates[[2]],
@@ -40,16 +34,7 @@ move_point <- function(feature, point_tbl) {
   new_lat <- feature$geometry$coordinates[[2]]
   
   notes <- point_tbl[point_tbl$geocat_id == id,]$geocat_notes
-  notes <- paste0(
-    notes,
-    "> ",
-    "Point move to ",
-    "(",
-    new_lon,
-    ", ",
-    new_lat,
-    ")"
-  )
+  notes <- paste0(notes, "> ", format_move_point(feature))
     
   point_tbl %>%
     mutate(
