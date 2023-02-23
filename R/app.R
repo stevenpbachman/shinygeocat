@@ -146,9 +146,12 @@ geocatApp <- function(...) {
   
   shiny::mainPanel(
     # map ----
-    leaflet::leafletOutput("mymap", width = "100%", height = 650)),
-    br(),
-    htmlOutput("messages")
+    div(
+      leaflet::leafletOutput("mymap", width = "100%", height = 550)),
+      br(),
+      wellPanel(htmlOutput("messages"),
+                style = "overflow-y: scroll; height: 100px; display: flex; flex-direction: column-reverse")
+    )
   )
 
 ##### server #####
