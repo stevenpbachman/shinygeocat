@@ -140,14 +140,10 @@ geocatApp <- function(...) {
       
       br(),
       br(),
-      ## SIS download widget ----
+      ## CSV download widget ----
       fluidRow(
         column(
-          4, align="center", 
-          downloadButton('download', "Download SIS point file")
-        ),
-        column(
-          4, align="center", 
+          8, align="center", 
           downloadButton('download_csv', "Download csv file")
         ),
         column(
@@ -502,25 +498,6 @@ server <- function(input, output, session) {
       }
     }
   })
-  
-  # point file download handler
-  output$download = downloadHandler(
-    filename = function(){
-      date <- format(Sys.Date(), "%Y%m%d")
-      species_name <- "SIS_points"
-      paste(species_name, "_", date, ".csv", sep = "" )
-    },
-    content = function(file){
-      df = csvPointsInput()
-      # merge with sis format
-      df <- dplyr::bind_cols(df,sis_format)
-      df$dec_lat <- df$latitude
-      df$dec_long <- df$longitude
-      #df <- df |> 
-      #  dplyr::select(-c(latitude, longitude))
-      write_csv(df, file)
-    }
-  )
   
   # csv file download handler
   output$download_csv = downloadHandler(
