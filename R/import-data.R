@@ -143,3 +143,18 @@ gbif_points_ <- function(points) {
   
   dplyr::as_tibble(points_list)
 }
+
+#' Import polygons from POWO for a given ID
+import_powo <- function(id) {
+  tryCatch({
+    results <- kewr::lookup_powo(id, distribution=TRUE)
+    dist_codes <- sapply(results$distribution$natives, function(x) x$tdwgCode)
+    filter(wgsrpd, LEVEL3_COD %in% dist_codes)
+  }, error=function(e) {
+    if (str_detect(e$message, "\\(404\\) Not Found")) {
+      return(NULL)
+    }
+    
+    stop(e)
+  })
+}
