@@ -211,10 +211,12 @@ server <- function(input, output, session) {
     values$messages <- c(values$messages, validated$msg)
     
     valid_points <- validated$valid_data
-    values$analysis_data <- bind_rows(values$analysis_data, valid_points)
+    if (nrow(valid_points) > 0) {
+      values$analysis_data <- bind_rows(values$analysis_data, valid_points)
     
-    msg <- glue::glue("Loaded {nrow(valid_points)} points for <i>{input$gbif_name}</i> from GBIF")
-    values$messages <- c(values$messages, info_message(msg))
+      msg <- glue::glue("Loaded {nrow(valid_points)} points for <i>{input$gbif_name}</i> from GBIF")
+      values$messages <- c(values$messages, info_message(msg))
+    }
   })
   
   observeEvent(input$queryPOWO, {
