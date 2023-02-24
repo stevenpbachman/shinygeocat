@@ -260,7 +260,7 @@ server <- function(input, output, session) {
   
   # leaflet base output map ----
   output$mymap <- leaflet::renderLeaflet({
-    leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 2)) %>%
+    leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 2,attributionControl=FALSE)) %>%
       leaflet.extras::addSearchOSM(options = leaflet.extras::searchOptions(
         autoCollapse = F,
         collapsed = F,
@@ -282,13 +282,17 @@ server <- function(input, output, session) {
                                        fill=T,
                                        fillColor="#ECAC7C",
                                        opacity=1,
-                                       fillOpacity=0.5
+                                       fillOpacity=0.5,
+                                       repeatMode = TRUE,
+                                       zIndexOffset = 2000 #not making any difference
                                       ),
                                      markerOptions=FALSE,
                                      rectangleOptions=FALSE,
                                      circleOptions=FALSE,
                                      polygonOptions=FALSE,
                                      polylineOptions=FALSE) %>%
+      
+      leaflet.extras::addFullscreenControl(position= "topleft") %>%
 
       leaflet::addMeasure(
         position = "bottomleft",
@@ -300,6 +304,12 @@ server <- function(input, output, session) {
       
       addTiles() %>%
       
+      addMapPane("powopolys", zIndex = 410)%>%
+      addMapPane("EOOpolys",zIndex = 420)%>%
+      addMapPane("AOOpolys",zIndex = 430)%>%
+      addMapPane("unmappoints",zIndex = 440)%>%
+      addMapPane("mappoints",zIndex = 450)%>%
+
       leaflet::addProviderTiles(
         provider = "CartoDB.Voyager",
         group = "CartoDB Voyager",
@@ -314,13 +324,13 @@ server <- function(input, output, session) {
       
       leaflet::addProviderTiles(
         provider = "Esri.WorldImagery",
-        group = "ESRI World Imagery (default)",
+        group = "ESRI Imagery",
         options = leaflet::providerTileOptions(noWrap = FALSE)
       )  %>%
       
       leaflet::addProviderTiles(
         provider = "Esri.WorldTopoMap",
-         group = "Esri World Topo Map",
+         group = "Esri Topo Map",
         options = leaflet::providerTileOptions(noWrap = FALSE)
         )  %>%
       
@@ -340,8 +350,8 @@ server <- function(input, output, session) {
         baseGroups = c(
           "CartoDB Voyager",
           "Open Street Map",
-          "ESRI World Imagery",
-          "Esri World Topo Map",
+          "ESRI Imagery",
+          "Esri Topo Map",
           "Stamen Toner",
           "Stamen Toner Lite"
         ),
@@ -431,7 +441,9 @@ server <- function(input, output, session) {
           color = "red",
           weight = 2,
           fillColor = "red",
-          group = "powopolys") 
+          group = "powopolys",
+          options = pathOptions(pane = "powopolys")
+          ) 
      
   })
 
@@ -550,12 +562,13 @@ server <- function(input, output, session) {
         fill = T,
         fillColor = ~used_pal(geocat_source),
         fillOpacity = 0.5,
-        options = markerOptions(draggable = FALSE),
+        #options = markerOptions(draggable = FALSE),
+        options = pathOptions(pane = "mappoints"),
         data=used_points
       ) %>%
       leaflet::addCircleMarkers(
         layerId = ~geocat_id,
-        group="mappoints",
+        group="unmappoints",
         radius = 7,
         color="#BBBBBB",
         stroke = T,
@@ -563,7 +576,8 @@ server <- function(input, output, session) {
         fill = T,
         fillColor = ~unused_pal(geocat_source),
         fillOpacity = 0.2,
-        options = markerOptions(draggable = FALSE),
+        #options = markerOptions(draggable = FALSE),
+        options = pathOptions(pane = "unmappoints"),
         data=unused_points
       )
   })
@@ -580,7 +594,8 @@ server <- function(input, output, session) {
           fillOpacity = 0.3,
           fill = T,
           fillColor = "red",
-          group = "AOOpolys"
+          group = "AOOpolys",
+          options = pathOptions(pane = "AOOpolys")
         )
     } else {
       leafletProxy("mymap") %>%
@@ -597,7 +612,8 @@ server <- function(input, output, session) {
           fillOpacity = 0.2,
           fill = T,
           fillColor = "grey",
-          group = "EOOpolys"
+          group = "EOOpolys",
+          options = pathOptions(pane = "EOOpolys")
         )
     } else {
       leaflet::leafletProxy("mymap") %>%
