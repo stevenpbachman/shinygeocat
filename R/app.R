@@ -173,7 +173,7 @@ geocatApp <- function(...) {
 server <- function(input, output, session) {
   values <- reactiveValues(
     analysis_data=empty_tbl_(),
-    messages=""
+    non_native=NA_real_
   )
   
   observeEvent(input$reset, {
@@ -202,8 +202,6 @@ server <- function(input, output, session) {
     
     msg <- glue::glue("Loaded {sum(valid_points$geocat_use)} points from a CSV")
     values$messages <- c(values$messages, info_message(msg))
-    
-    valid_points
   })
   
   observeEvent(input$queryGBIF, {
@@ -217,19 +215,20 @@ server <- function(input, output, session) {
     
     msg <- glue::glue("Loaded {nrow(valid_points)} points for <i>{input$gbif_name}</i> from GBIF")
     values$messages <- c(values$messages, info_message(msg))
-    
-    valid_points
   })
   
-  powo_range <- shiny::eventReactive(input$powo_id, {
-    geoms <- native_geom(input$powo_id)
-
+  observeEvent(input$queryPOWO, {
+    geoms <- import_powo(input$powo_id)
     values$native_geom <- geoms
     
-    msg <- glue::glue("Loaded {nrow(geoms)} native regions from POWO for taxon {input$powo_id}")
-    values$messages <- c(values$messages, info_message(msg))
-      
-    geoms
+    if (! is.null(geoms)) {
+      msg <- glue::glue("Loaded {nrow(geoms)} native regions from POWO for taxon {input$powo_id}")
+      msg <- info_message(msg)
+    } else {
+      msg <- glue::glue("No entry found in POWO for taxon {input$powo_id}")
+      msg <- error_message(msg)
+    }
+    values$messages <- c(values$messages, msg)
   })
   
   output$messages <- renderPrint({
@@ -244,14 +243,22 @@ server <- function(input, output, session) {
     shinyWidgets::updateMaterialSwitch(session, "native_onoff", value=FALSE)
   })
   
-  shiny::observeEvent(list(values$analysis_data, values$native_geom), {
-    if (!is.null(values$native_geom) & nrow(values$analysis_data) > 0) {
-      values$analysis_data <- flag_native(values$analysis_data, values$native_geom)
-      
-      msg <- glue::glue("Found {sum(values$analysis_data$geocat_native)} points outside native range")
-      values$messages <- c(values$messages, alert_message(msg))
+  shiny::observeEvent(req(!is.null(values$native_geom) & nrow(values$analysis_data) > 0), {
+    
+    # can't stop this getting called twice cos it updates `values$analysis_data`
+    values$analysis_data <- flag_native(values$analysis_data, values$native_geom)
+    non_native <- sum(! values$analysis_data$geocat_native)
+    
+    # a bit hacky but stops this sending more than one message at a time
+    updated <- values$non_native != non_native
+    if (updated %in% c(FALSE)) {
+      return()
     }
-  }, ignoreNULL=TRUE, ignoreInit=TRUE)
+    
+    msg <- glue::glue("Found {non_native} points outside native range")
+    values$messages <- c(values$messages, alert_message(msg))
+    values$non_native <- non_native
+  })
   
   # leaflet base output map ----
   output$mymap <- leaflet::renderLeaflet({
@@ -410,19 +417,19 @@ server <- function(input, output, session) {
       mutate(geocat_use=ifelse(geocat_deleted, FALSE, geocat_use))
   }, ignoreInit=TRUE, ignoreNULL=TRUE)
   
-  shiny::observeEvent(req(nrow(values$native_geom) > 0), {
+  shiny::observeEvent(req(! is.null(values$native_geom)), {
     shinyjs::enable("native_onoff")
   })
   
-  shiny::observeEvent(input$queryPOWO, {
-    bb <- sf::st_bbox(powo_range())
+  shiny::observeEvent(req(! is.null(values$native_geom)), {
+    bb <- sf::st_bbox(values$native_geom)
       leaflet::leafletProxy("mymap") %>%
       leaflet::clearGroup("powopolys") %>%
       #zoom to
       leaflet::fitBounds(bb[[1]], bb[[2]], bb[[3]], bb[[4]]) %>%
 
     leaflet::addPolygons(
-          data = powo_range(),
+          data = values$native_geom,
           color = "red",
           weight = 2,
           fillColor = "red",
