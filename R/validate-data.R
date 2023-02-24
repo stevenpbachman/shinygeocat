@@ -168,7 +168,7 @@ empty_tbl_ <- function() {
     seasonal=numeric(),
     data_sens=character(),
     source=character(),
-    yrcompiled=character(),
+    yrcompiled=numeric(),
     compiler=character(),
     citation=character(),
     recordedBy=character(),
