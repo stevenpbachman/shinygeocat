@@ -213,8 +213,13 @@ section, section.well {
   max-width: 100%;
 }
 
+[id="mymap"]:focus {
+  outline: 4px solid #0ce3ac;
+} 
 
-
+[id="mymap"] :focus {
+  color: black;
+} 
 
 @media (min-width: 900px) {
   main {
