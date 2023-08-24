@@ -168,7 +168,6 @@ details summary h2 {
   overflow-y: auto;
   display: flex;
   flex-direction: column-reverse;
-  min-height: 100px;
 }
 
 .well label {
@@ -247,6 +246,11 @@ section, section.well {
     height: unset;
     display: flex;
     flex-direction: column;
+    row-gap: 1em
+  }
+
+  [id="log-section"] h2 {
+    margin: 0;
   }
 
   [id="log-section"] well {
@@ -301,7 +305,7 @@ section, section.well {
 
   }
 
-  @media (min-height: 800px) {
+  @media (min-height: 850px) {
     body > div.container-fluid {
       height: 100vh;
       overflow: hidden;
