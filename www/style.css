@@ -312,5 +312,9 @@ section, section.well {
       min-height: 0;
       grid-template-rows: 550px 1fr;
     }
+
+    [id="controls-section"] {
+      scrollbar-gutter: stable;
+    }
   }
 }
