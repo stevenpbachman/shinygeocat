@@ -9,7 +9,7 @@ geocatApp <- function(...) {
     tags$head(
       tags$title("ShinyGeoCAT  - Geospatial Conservation Assessment Tools"), # WCAG modification
       tags$link(rel = "stylesheet", href = "style.css"),
-      tags$script(src = "script.js")
+      tags$script(src = "script.js", type = "module")
     ),
     
     tags$header(
