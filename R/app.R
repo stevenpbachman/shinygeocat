@@ -61,13 +61,12 @@ geocatApp <- function(...) {
               'No file uploaded'
             )
           ),
-        
-          shinyjs::disabled(
+          shinyjs::hidden(
             ## csv points on/off ----
             shinyWidgets::prettySwitch(
               inputId = "csv_onoff",
               label = "CSV",
-              value = FALSE,
+              value = TRUE,
               status = "primary",
               fill = TRUE
             )
@@ -79,13 +78,13 @@ geocatApp <- function(...) {
           class="data-block",
           tags$label("for"="gbif_name", "Enter a taxon name to load points from GBIF:"),
           textInput("gbif_name", label=NULL, placeholder="e.g. Cyphostemma njegerre"),
-          actionButton("queryGBIF", "load points"),
-          shinyjs::disabled(
+          actionButton("queryGBIF", "Load points"),
+          shinyjs::hidden(
             ## GBIF points on/off ----
             shinyWidgets::prettySwitch(
               inputId = "gbif_onoff",
               label = "GBIF",
-              value = FALSE,
+              value = TRUE,
               status = "success",
               fill = TRUE
             )
@@ -97,8 +96,8 @@ geocatApp <- function(...) {
           class="data-block",
           tags$label("for"="powo_id", "Enter a POWO ID for a native range map:"),
           textInput("powo_id", label=NULL, placeholder="e.g. 68179-1"),
-          actionButton("queryPOWO", "load map"),
-          shinyjs::disabled(
+          actionButton("queryPOWO", "Load map"),
+          shinyjs::hidden(
             shinyWidgets::prettySwitch(
               inputId = "native_onoff",
               label = "Exclude non-native",
@@ -121,7 +120,12 @@ geocatApp <- function(...) {
           "Add some instructions here explaining how the analysis section works"
         ),
         
-        shinyjs::disabled(
+        tags$p(
+          "id" = "analysis-info",
+          "Analysis requires at least two data points"  
+        ),
+        
+        shinyjs::hidden(
           shinyWidgets::prettySwitch(
             inputId = "Analysis",
             label = "Analysis on/off",
@@ -217,6 +221,9 @@ server <- function(input, output, session) {
     }
     
     msg <- glue::glue("Loaded {sum(valid_points$geocat_use)} points from a CSV")
+    
+    session$sendCustomMessage("fileuploaded", input$csv_in$name)
+    
     values$messages <- c(values$messages, info_message(msg))
   })
   
@@ -410,17 +417,18 @@ server <- function(input, output, session) {
   })
   
   ############################
-  observeEvent(req(nrow(values$analysis_data) > 0), {
-    shinyjs::enable("Analysis")
+  observeEvent(req(nrow(values$analysis_data) > 1), {
+    shinyjs::show("Analysis")
+    shinyjs::hide("analysis-info")
   }, once=TRUE)
   
   shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "User CSV") > 0), {
-    shinyjs::enable("csv_onoff")
+    shinyjs::show("csv_onoff")
     shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
   }, once=TRUE)
   
   shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "GBIF") > 0), {
-    shinyjs::enable("gbif_onoff")
+    shinyjs::show("gbif_onoff")
     shinyWidgets::updateMaterialSwitch(session, "gbif_onoff", value=TRUE)
   }, once=TRUE)
   
@@ -446,7 +454,7 @@ server <- function(input, output, session) {
   }, ignoreInit=TRUE, ignoreNULL=TRUE)
   
   shiny::observeEvent(req(! is.null(values$native_geom)), {
-    shinyjs::enable("native_onoff")
+    shinyjs::show("native_onoff")
   })
   
   shiny::observeEvent(req(! is.null(values$native_geom)), {
