@@ -66,6 +66,11 @@ main section h2:first-of-type {
   border-radius: 4px;
 }
 
+.well input[type="file"] {
+  width: 100%;
+  color: transparent;
+}
+
 .well input[type="file"]::file-selector-button {
   display: inline-block;
   font-weight: normal;
@@ -99,6 +104,22 @@ a.btn:hover,
 .well input[type="file"]::file-selector-button:hover {
   outline: 1px solid white;
   outline-offset: -2px;
+}
+
+.well [id="file-wrapper"] {
+  position: relative;
+}
+
+.well [id="file-wrapper"] .file-text {
+  position: absolute;
+  display: block;
+  color: #999999;
+  height: 100%;
+  left: 125px;
+  top: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
 }
 
 .well input[type="text"]:focus {

@@ -1,3 +1,6 @@
+options(shiny.autoreload = TRUE)
+options(shiny.launch.browser = .rs.invokeShinyWindowExternal)
+
 #' @import shiny dplyr
 geocatApp <- function(...) {
   #### ui ####
@@ -45,11 +48,20 @@ geocatApp <- function(...) {
             "for"="csv_in",
             "Upload a CSV with at least 'longitude', 'latitude' fields",
           ),
-          tags$input(
-            id="csv_in",
-            type="file",
-            accept = ".csv",
+          tags$div(
+            id = "file-wrapper",
+            tags$input(
+              id="csv_in",
+              type="file",
+              accept = ".csv",
+            ),
+            tags$span(
+              "aria-hidden" = "true",
+              "class" = "file-text",
+              'No file uploaded'
+            )
           ),
+        
           shinyjs::disabled(
             ## csv points on/off ----
             shinyWidgets::prettySwitch(
