@@ -189,10 +189,12 @@ details summary h2 {
   grid-area: search;
 }
 
+[id="log-section"] {
+  max-height: 300px;
+}
+
 [id="log-section"] [id="message-log"] {
   overflow-y: auto;
-  display: flex;
-  flex-direction: column-reverse;
 }
 
 .well label {
@@ -243,7 +245,7 @@ section, section.well {
 
 [id="mymap"] :focus {
   color: black;
-} 
+}
 
 @media (min-width: 900px) {
   main {
@@ -271,7 +273,7 @@ section, section.well {
     height: unset;
     display: flex;
     flex-direction: column;
-    row-gap: 1em
+    row-gap: 1em;
   }
 
   [id="log-section"] h2 {

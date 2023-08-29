@@ -257,7 +257,7 @@ server <- function(input, output, session) {
   })
   
   output$messages <- renderPrint({
-    glue::glue_collapse(values$messages, sep="\n<br>\n")
+    glue::glue_collapse(rev(values$messages), sep="\n<br>\n")
   })
   
   observeEvent(input$queryGBIF, {
@@ -393,7 +393,7 @@ server <- function(input, output, session) {
     values$analysis_data <- bind_rows(values$analysis_data, point_data)
     
     msg <- format_new_point(input$mymap_draw_new_feature)
-    values$messages <- c(values$messages, info_message(msg))
+    values$messages <- c(values$messages, info_message(paste(msg)))
   })
   
   #move points
