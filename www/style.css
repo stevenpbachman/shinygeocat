@@ -2,6 +2,19 @@
   --h2-size: 26px;
 }
 
+a:not(.btn) {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+a:not(.btn):hover {
+  text-decoration-style: solid;
+}
+
+a:focus {
+  outline-offset: unset;
+}
+
 body > div.container-fluid {
   max-width: 1500px;
   display: flex;
@@ -48,6 +61,10 @@ h2 {
   grid-area: controls;
   overflow: auto;
   margin-bottom: 0;
+}
+
+[id="controls-section"] :is(button, a.btn):focus-visible {
+  text-decoration: underline dashed;
 }
 
 main section h2:first-of-type {
@@ -104,9 +121,10 @@ button.btn-default, a.btn {
   border: 1px solid white;
 }
 
-button.btn-default:hover,
-a.btn:hover,
-.well input[type="file"]::file-selector-button:hover {
+button.btn-default:hover, button.btn-default:focus,
+a.btn:hover, a.btn:focus,
+.well input[type="file"]::file-selector-button:hover,
+.well input[type="file"]::file-selector-button:focus {
   outline: 2px solid white;
 }
 
@@ -117,7 +135,7 @@ a.btn:hover,
 .well [id="file-wrapper"] .file-text {
   position: absolute;
   display: block;
-  color: #999999;
+  color: #555555;
   height: 100%;
   left: 125px;
   top: 0;
@@ -160,6 +178,10 @@ details summary h2 {
   margin-bottom: 0.5em;
 }
 
+.text-input-block .text-input-wrapper > * {
+  margin: 0;
+}
+
 .p-switch:focus-within {
   outline: 1px solid white;
   outline-offset: 3px;
@@ -183,10 +205,6 @@ details summary h2 {
     "a"
     "b"
     "c"
-}
-
-[id="powo-block"] :nth-child(5) {
-  grid-area: search;
 }
 
 [id="log-section"] {
@@ -247,6 +265,14 @@ section, section.well {
   color: black;
 }
 
+[id="map-section"] a {
+  text-decoration: none;
+}
+
+.hint {
+  font-size: 0.8em;
+}
+
 @media (min-width: 900px) {
   main {
     min-height: 0;
@@ -303,33 +329,37 @@ section, section.well {
       grid-template-areas: 
         "label ."
         "textbox load"
-        "disable disable";
+        "hint hint"
+        "toggle toggle";
     }
     
     [id="powo-block"] {
       grid-template-areas: 
         "label ."
         "textbox load"
-        "disable disable"
-        "search search";
+        "hint hint"
+        "toggle toggle"
     }
 
-    :is([id="gbif-block"], [id="powo-block"]) :nth-child(1) {
+    .text-input-block label {
       grid-area: label;
     }
     
-    :is([id="gbif-block"], [id="powo-block"]) :nth-child(2) {
+    .text-input-block .text-input-wrapper {
       grid-area: textbox;
     }
     
-    :is([id="gbif-block"], [id="powo-block"]) :nth-child(3) {
+    .text-input-block button {
       grid-area: load;
     }
-    
-    :is([id="gbif-block"], [id="powo-block"]) :nth-child(4) {
-      grid-area: disable;
-    }
 
+    .text-input-block .hint {
+      grid-area: hint;
+    }
+    
+    .text-input-block .toggle-wrapper {
+      grid-area: toggle;
+    }
   }
 
   @media (min-height: 850px) {

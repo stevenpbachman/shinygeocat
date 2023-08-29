@@ -80,38 +80,57 @@ geocatApp <- function(...) {
         
         tags$div(
           id="gbif-block",
-          class="data-block",
+          class="data-block text-input-block",
           tags$label("for"="gbif_name", "Enter a taxon name to load points from GBIF:"),
-          textInput("gbif_name", label=NULL, placeholder="e.g. Cyphostemma njegerre"),
-          actionButton("queryGBIF", "Load points"),
-          shinyjs::hidden(
-            ## GBIF points on/off ----
-            shinyWidgets::prettySwitch(
-              inputId = "gbif_onoff",
-              label = "GBIF",
-              value = TRUE,
-              status = "success",
-              fill = TRUE
-            )
+          tags$div(
+            "class" = "text-input-wrapper",
+            textInput("gbif_name", label=NULL)
           ),
+          tags$span(id="gbif-hint", class = "hint", "e.g. Cyphostemma njegerre"),
+          actionButton("queryGBIF", "Load points"),
+          tags$span(
+            "class" = "toggle-wrapper",
+            shinyjs::hidden(
+              ## GBIF points on/off ----
+              shinyWidgets::prettySwitch(
+                inputId = "gbif_onoff",
+                label = "GBIF",
+                value = TRUE,
+                status = "success",
+                fill = TRUE
+              )
+            )
+          )
         ),
         
         tags$div(
           id="powo-block",
-          class="data-block",
+          class="data-block text-input-block",
           tags$label("for"="powo_id", "Enter a POWO ID for a native range map:"),
-          textInput("powo_id", label=NULL, placeholder="e.g. 68179-1"),
-          actionButton("queryPOWO", "Load map"),
-          shinyjs::hidden(
-            shinyWidgets::prettySwitch(
-              inputId = "native_onoff",
-              label = "Exclude non-native",
-              value = FALSE,
-              status = "danger",
-              fill = TRUE
-            )
+          tags$div(
+            "class" = "text-input-wrapper",
+            textInput("powo_id", label=NULL)
           ),
-          tags$a(href="https://powo.science.kew.org/", "Search POWO to get accepted name ID", target="_blank"),
+          tags$span(
+            "id" = "powo-hint",
+            "class" = "hint",
+            "e.g. 68179-1. Search",
+            tags$a(href="https://powo.science.kew.org/", target="_blank", "POWO"),
+            "to get accepted name ID."
+          ),
+          actionButton("queryPOWO", "Load map"),
+          tags$span(
+            "class" = "toggle-wrapper",
+            shinyjs::hidden(
+              shinyWidgets::prettySwitch(
+                inputId = "native_onoff",
+                label = "Exclude non-native",
+                value = FALSE,
+                status = "danger",
+                fill = TRUE
+              )
+            )
+          )
         )
       ),
       

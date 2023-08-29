@@ -11,6 +11,12 @@ function fixControls() {
   $('[role="presentation"][aria-label]')
     .removeAttr('aria-label');
 
+  $('#gbif_name')
+    .attr('aria-describedby', 'gbif-hint');
+
+  $('#powo_id')
+    .attr('aria-describedby', 'powo-hint');
+
   Shiny.addCustomMessageHandler("fileuploaded", function(fileName){
     $('#csv-block .file-text').text(fileName);
   });

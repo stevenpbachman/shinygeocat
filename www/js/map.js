@@ -1,5 +1,9 @@
 
 function fixA11yIssues () {
+  $('.search-input')
+    .attr('type', 'search')
+    .removeAttr('role');
+
   const $searchButton = $('.leaflet-control-search')
     .find('a.search-button');
 
