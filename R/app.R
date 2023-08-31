@@ -61,6 +61,11 @@ geocatApp <- function(...) {
               'No file uploaded'
             )
           ),
+          tags$div(
+            id = paste("csv_in_progress", sep = ""),
+            class = "progress active shiny-file-input-progress",
+            tags$div(class = "progress-bar")
+          ),
           shinyjs::hidden(
             ## csv points on/off ----
             shinyWidgets::prettySwitch(
