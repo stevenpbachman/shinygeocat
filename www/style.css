@@ -1,0 +1,381 @@
+:root {
+  --h2-size: 26px;
+}
+
+a:not(.btn) {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
+a:not(.btn):hover {
+  text-decoration-style: solid;
+}
+
+a:focus {
+  outline-offset: unset;
+}
+
+body > div.container-fluid {
+  max-width: 1500px;
+  display: flex;
+  flex-direction: column;
+  row-gap: 1em;
+}
+
+header, main, footer {
+  flex: 0 0 auto;
+  margin: 0;
+  justify-content: space-between;
+}
+
+header {
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.2em;
+}
+
+header h1 {
+  font-size: 32px;
+}
+
+:is(header, footer) > * {
+  margin: 0;
+}
+
+[id="beta"], footer {
+  font-size: 0.8em;
+  color: lightgrey;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1em;
+}
+
+h2 {
+  font-size: var(--h2-size);
+}
+
+[id="controls-section"] {
+  grid-area: controls;
+  overflow: auto;
+  margin-bottom: 0;
+}
+
+[id="controls-section"] :is(button, a.btn):focus-visible {
+  text-decoration: underline dashed;
+}
+
+main section h2:first-of-type {
+  margin-top: 0;
+}
+
+.well input[readonly="readonly"] {
+  display: none;
+}
+
+.well input[type="file"] {
+  color: #999999;
+  font-size: 15px;
+  cursor: pointer;
+  background-color: white;
+  border-radius: 4px;
+}
+
+.well input[type="file"] {
+  width: 100%;
+  color: transparent;
+}
+
+.well input[type="file"]::file-selector-button {
+  display: inline-block;
+  font-weight: normal;
+  text-align: center;
+  vertical-align: middle;
+  touch-action: manipulation;
+  background-image: none;
+  border: 1px solid #464545;
+  white-space: nowrap;
+  padding: 10px 15px;
+  font-size: 15px;
+  line-height: 1.42857143;
+  border-radius: 4px;
+  user-select: none;
+  color: #ffffff;
+  background-color: #464545;
+  border-width: 2px;
+  cursor: pointer;
+  margin: 0.2em;
+  margin-right: 1em;
+}
+
+.well input[type="file"]::file-selector-button:hover {
+  color: #ffffff;
+  background-color: #2c2c2c;
+  border-color: #272727;
+  outline-offset: -3px;
+}
+
+button.btn-default, a.btn {
+  border: 1px solid white;
+}
+
+button.btn-default:hover, button.btn-default:focus,
+a.btn:hover, a.btn:focus,
+.well input[type="file"]::file-selector-button:hover,
+.well input[type="file"]::file-selector-button:focus {
+  outline: 2px solid white;
+}
+
+.well [id="file-wrapper"] {
+  position: relative;
+}
+
+.well [id="file-wrapper"] .file-text {
+  position: absolute;
+  display: block;
+  color: #555555;
+  height: 100%;
+  left: 125px;
+  top: 0;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.well input[type="text"]:focus {
+  outline: 1px solid white;
+  outline-offset: 2px;
+}
+
+.help {
+  margin: 1em;
+}
+
+details {
+  margin-bottom: 2em;
+}
+
+details summary {
+  display: list-item;
+  cursor: pointer;
+}
+
+details:not(.help) > summary {
+  font-size: var(--h2-size);
+}
+
+.help[open] summary::after {
+  content: ":"
+}
+
+details summary h2 {
+  display: inline;
+}
+
+.help[open] summary {
+  margin-bottom: 0.5em;
+}
+
+.text-input-block .text-input-wrapper > * {
+  margin: 0;
+}
+
+.p-switch:focus-within {
+  outline: 1px solid white;
+  outline-offset: 3px;
+}
+
+.data-block {
+  padding: 1em 0;
+  display: grid;
+  column-gap: 0.75em;
+  row-gap: 0.75em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.data-block > *{
+  margin: 0;
+}
+
+[id="csv-block"] {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  grid-template-areas:
+    "a"
+    "b"
+    "c"
+}
+
+[id="log-section"] {
+  max-height: 300px;
+}
+
+[id="log-section"] [id="message-log"] {
+  overflow-y: auto;
+}
+
+.well label {
+  font-weight: normal;
+}
+
+body > div.container-fluid {
+  display: flex;
+  flex-direction: column;
+  row-gap: 1em;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+}
+
+section, section.well {
+  border: 1px solid #999999;
+}
+
+.well {
+  margin-bottom: 0;
+}
+
+[id="gbif-block"], [id="powo-block"] {
+  display: flex;
+  flex-direction: column;
+}
+
+[id="next-step-buttons"] {
+  width: 100%;
+  display: flex;
+  column-gap: 4em;
+  row-gap: 1em;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+[id="next-step-buttons"] > * {
+  flex: 1 1 180px;
+  max-width: 100%;
+}
+
+[id="mymap"]:focus {
+  outline: 4px solid #0ce3ac;
+} 
+
+[id="mymap"] :focus {
+  color: black;
+}
+
+[id="map-section"] a {
+  text-decoration: none;
+}
+
+.hint {
+  font-size: 0.8em;
+}
+
+@media (min-width: 900px) {
+  main {
+    min-height: 0;
+    display: grid;
+    row-gap: 1em;
+    column-gap: 1em;
+    grid-template-columns: 275px 1fr;
+    grid-template-rows: 550px 1fr;
+    grid-template-areas: 
+      "controls map"
+      "controls log"
+  }
+
+  [id="controls-section"] {
+    grid-area: controls;
+  }
+  
+  [id="map-section"] {
+    grid-area: map;
+  }
+  
+  [id="log-section"] {
+    grid-area: log;
+    height: unset;
+    display: flex;
+    flex-direction: column;
+    row-gap: 1em;
+  }
+
+  [id="log-section"] h2 {
+    margin: 0;
+  }
+
+  [id="log-section"] well {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  section, section.well {
+    border: none;
+  }
+
+  @media (min-width: 1200px) {
+    main {
+      grid-template-columns: 475px 1fr;
+    }
+  
+    [id="gbif-block"], [id="powo-block"] {
+      display: grid;
+      grid-template-columns: 1fr 110px;
+    }
+
+    [id="gbif-block"] {
+      grid-template-areas: 
+        "label ."
+        "textbox load"
+        "hint hint"
+        "toggle toggle";
+    }
+    
+    [id="powo-block"] {
+      grid-template-areas: 
+        "label ."
+        "textbox load"
+        "hint hint"
+        "toggle toggle"
+    }
+
+    .text-input-block label {
+      grid-area: label;
+    }
+    
+    .text-input-block .text-input-wrapper {
+      grid-area: textbox;
+    }
+    
+    .text-input-block button {
+      grid-area: load;
+    }
+
+    .text-input-block .hint {
+      grid-area: hint;
+    }
+    
+    .text-input-block .toggle-wrapper {
+      grid-area: toggle;
+    }
+  }
+
+  @media (min-height: 850px) {
+    body > div.container-fluid {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    main {
+      flex: 1 1 auto;
+      min-height: 0;
+      grid-template-rows: 550px 1fr;
+    }
+
+    [id="controls-section"] {
+      scrollbar-gutter: stable;
+    }
+  }
+}

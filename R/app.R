@@ -1,167 +1,215 @@
+options(shiny.autoreload = TRUE)
+options(shiny.launch.browser = .rs.invokeShinyWindowExternal)
+
 #' @import shiny dplyr
 geocatApp <- function(...) {
   #### ui ####
   ui <- fluidPage(
-    
-    shinyjs::useShinyjs(),
-   
-    tags$html(lang = "en"),
-    
-    # title
-    titlePanel("ShinyGeoCAT - Geospatial Conservation Assessment Tools"),
-    tags$head(tags$title("ShinyGeoCAT  - Geospatial Conservation Assessment Tools")), # WCAG modification
-    
-    # set theme
     theme = shinythemes::shinytheme("darkly"),
+    shinyjs::useShinyjs(),
     
+    tags$html(lang = "en"),
+    tags$head(
+      tags$title("ShinyGeoCAT  - Geospatial Conservation Assessment Tools"), # WCAG modification
+      tags$link(rel = "stylesheet", href = "style.css"),
+      tags$script(src = "script.js", type = "module")
+    ),
+    
+    tags$header(
+      tags$h1("ShinyGeoCAT - Geospatial Conservation Assessment Tools"),
+      tags$span(
+        id="beta",
+        "This is a BETA test version. Send any feedback to ",
+        tags$a(href="mailtto:s.bachman@kew.org", "s.bachman@kew.org"),
+        "."
+      )
+    ),
+    
+    tags$main(
     # Sidebar panel for inputs
-    shiny::sidebarPanel(
+    tags$section(
+      id="controls-section",
+      class="well",
       
-      p("This is a BETA test version. Send any feedback to s.bachman@kew.org."),
-      
-      
-      p("Moat, J., Bachman, S., & Walker, B. (2023). ShinyGeoCAT - Geospatial Conservation Assessment Tools (BETA) [Software]. Available from https://spbachman.shinyapps.io/geocat_staging/"),
-      br(),
-      
-      # sidebar ----
-      shinyjs::disabled(
-        shinyWidgets::materialSwitch(
-          inputId = "Analysis",
-          label = "Analysis on/off",
-          value = FALSE,
-          status = "success"
-        )
-      ),
-      
-      # switch csv points on/off from map
-      shiny::htmlOutput("res_title"),
-      ## EOO AOO results ----
-      shiny::htmlOutput("text"),
-      
-      br(),
-      
-      shiny::fluidRow(
-        column(
-          3, align = "left", 
-          shinyjs::disabled(
+      tags$details(
+        open="open",
+        tags$summary(tags$h2("Data")),
+        
+        tags$details(
+          class="help",
+          tags$summary("Help"),
+          "Add some instructions here explaining how the data section works"
+        ),
+        
+        tags$div(
+          id="csv-block",
+          class="data-block",
+          tags$label(
+            "for"="csv_in",
+            "Upload a CSV with at least 'longitude', 'latitude' fields",
+          ),
+          tags$div(
+            id = "file-wrapper",
+            tags$input(
+              id="csv_in",
+              type="file",
+              accept = ".csv",
+            ),
+            tags$span(
+              "aria-hidden" = "true",
+              "class" = "file-text",
+              'No file uploaded'
+            )
+          ),
+          tags$div(
+            id = paste("csv_in_progress", sep = ""),
+            class = "progress active shiny-file-input-progress",
+            tags$div(class = "progress-bar")
+          ),
+          shinyjs::hidden(
             ## csv points on/off ----
             shinyWidgets::prettySwitch(
               inputId = "csv_onoff",
               label = "CSV",
-              value = FALSE,
+              value = TRUE,
               status = "primary",
               fill = TRUE
-            ),
-            shiny::fluidRow(column(
-              12, align = "center", verbatimTextOutput("validation")
-            ))
-          ),
-        ),
-        column(
-          3, align = "left", 
-          shinyjs::disabled(
-            ## GBIF points on/off ----
-            shinyWidgets::prettySwitch(
-              inputId = "gbif_onoff",
-              label = "GBIF",
-              value = FALSE,
-              status = "success",
-              fill = TRUE
             )
-          ),
+          )
         ),
-        column(
-          3, align = "left", 
-          shinyjs::disabled(
-            ## non-native points on/off ----
-            shinyWidgets::prettySwitch(
-              inputId = "native_onoff",
-              label = "Exclude non-native",
-              value = FALSE,
-              status = "danger",
-              fill = TRUE
+        
+        tags$div(
+          id="gbif-block",
+          class="data-block text-input-block",
+          tags$label("for"="gbif_name", "Enter a taxon name to load points from GBIF:"),
+          tags$div(
+            "class" = "text-input-wrapper",
+            textInput("gbif_name", label=NULL)
+          ),
+          tags$span(id="gbif-hint", class = "hint", "e.g. Cyphostemma njegerre"),
+          actionButton("queryGBIF", "Load points"),
+          tags$span(
+            "class" = "toggle-wrapper",
+            shinyjs::hidden(
+              ## GBIF points on/off ----
+              shinyWidgets::prettySwitch(
+                inputId = "gbif_onoff",
+                label = "GBIF",
+                value = TRUE,
+                status = "success",
+                fill = TRUE
+              )
             )
+          )
+        ),
+        
+        tags$div(
+          id="powo-block",
+          class="data-block text-input-block",
+          tags$label("for"="powo_id", "Enter a POWO ID for a native range map:"),
+          tags$div(
+            "class" = "text-input-wrapper",
+            textInput("powo_id", label=NULL)
           ),
-        )
-      ),
-      
-      br(),
-      
-      shiny::fluidRow(
-        ## CSV input widget ----
-        column(
-          12,
-          align = "centre",
-          shiny::helpText("Upload a CSV with at least 'longitude', 'latitude' fields "),
-          shiny::fileInput(
-            "csv_in",
-            NULL,
-            multiple = FALSE,
-            accept = (".csv")
+          tags$span(
+            "id" = "powo-hint",
+            "class" = "hint",
+            "e.g. 68179-1. Search",
+            tags$a(href="https://powo.science.kew.org/", target="_blank", "POWO"),
+            "to get accepted name ID."
           ),
-        ),
-      ),
-      ## GBIF input field ----
-      shiny::fluidRow(column(
-        12, align = "center", verbatimTextOutput("gbifValidation")
-      )),
-      
-      fluidRow(
-        column(12, align="left",
-               tags$h5("Enter a taxon name to load points from GBIF:")
+          actionButton("queryPOWO", "Load map"),
+          tags$span(
+            "class" = "toggle-wrapper",
+            shinyjs::hidden(
+              shinyWidgets::prettySwitch(
+                inputId = "native_onoff",
+                label = "Exclude non-native",
+                value = FALSE,
+                status = "danger",
+                fill = TRUE
+              )
+            )
+          )
         )
       ),
       
-      fluidRow(
-        column(8, align="center",
-               textInput("gbif_name", label=NULL, placeholder="Cyphostemma njegerre")),
-        column(4, align="center",
-               actionButton("queryGBIF", "load points"))
-      ),
-      ## POWO ID field ----
-      fluidRow(
-        column(12, align="left",
-               tags$h5("Enter a POWO ID for a native range map:")
-        )
-      ),
-      
-      shiny::fluidRow(
-        column(
-          8, align = "center", 
-          shiny::textInput("powo_id", label = NULL, placeholder = "68179-1")
+      tags$details(
+        open="open",
+        tags$summary(tags$h2("Analysis")),
+  
+        tags$details(
+          class="help",
+          tags$summary("Help"),
+          "Add some instructions here explaining how the analysis section works"
         ),
-        column(
-          4, align = "center", 
-          actionButton("queryPOWO", "load map")
-        )
+        
+        tags$p(
+          "id" = "analysis-info",
+          "Analysis requires at least two data points"  
+        ),
+        
+        shinyjs::hidden(
+          shinyWidgets::prettySwitch(
+            inputId = "Analysis",
+            label = "Analysis on/off",
+            value = FALSE,
+            status = "success",
+          )
+        ),
+        
+        shiny::htmlOutput("res_title"),
+        shiny::htmlOutput("text"),
       ),
       
-      tags$a(href="https://powo.science.kew.org/", "Search POWO to get accepted name ID", target="_blank"),
+      tags$details(
+        open="open",
+        tags$summary(tags$h2("Next Steps")),
       
-      br(),
-      br(),
-      ## CSV download widget ----
-      fluidRow(
-        column(
-          8, align="center", 
-          downloadButton('download_csv', "Download csv file")
+        tags$details(
+          class="help",
+          tags$summary("Help"),
+          "Add some instructions here explaining how the next steps section works"
         ),
-        column(
-          4, align = "center", 
+        
+        tags$div(
+          id="next-step-buttons",
+          downloadButton("download_csv", "Download CSV file"),
           actionButton("reset", "Reset")
         )
       )
     ),
-
-  #### Main panel for displaying outputs ####
-  
-  shiny::mainPanel(
-    # map ----
-    div(
-      leaflet::leafletOutput("mymap", width = "100%", height = 550)),
-      br(),
-      wellPanel(htmlOutput("messages"),
-                style = "overflow-y: scroll; height: 100px; display: flex; flex-direction: column-reverse")
+    
+    #### Main panel for displaying outputs ####
+    
+    tags$section(
+      id="map-section",
+      div(
+        leaflet::leafletOutput("mymap", height = 550)
+      )
+    ),
+    
+    tags$section(
+      id="log-section",
+      class="well",
+      tags$h2("Message Log"),
+      tags$div(
+        id = "message-log",
+        htmlOutput("messages") 
+      )
+    ),
+    
+    ),
+    
+    tags$footer(
+      p(
+        "Moat, J., Bachman, S., & Walker, B. (2023). ShinyGeoCAT - Geospatial Conservation Assessment Tools (BETA) [Software]. ",
+        "Available from ",
+        tags$a(
+          href="https://spbachman.shinyapps.io/geocat_staging/",
+          "https://spbachman.shinyapps.io/geocat_staging/"
+        )
+      )
     )
   )
 
@@ -173,7 +221,7 @@ server <- function(input, output, session) {
   )
   
   observeEvent(input$reset, {
-      session$reload()
+    session$reload()
   })
   
   ##################################
@@ -197,6 +245,9 @@ server <- function(input, output, session) {
     }
     
     msg <- glue::glue("Loaded {sum(valid_points$geocat_use)} points from a CSV")
+    
+    session$sendCustomMessage("fileuploaded", input$csv_in$name)
+    
     values$messages <- c(values$messages, info_message(msg))
   })
   
@@ -209,7 +260,7 @@ server <- function(input, output, session) {
     valid_points <- validated$valid_data
     if (nrow(valid_points) > 0) {
       values$analysis_data <- bind_rows(values$analysis_data, valid_points)
-    
+      
       msg <- glue::glue("Loaded {nrow(valid_points)} points for <i>{input$gbif_name}</i> from GBIF")
       values$messages <- c(values$messages, info_message(msg))
     }
@@ -230,7 +281,7 @@ server <- function(input, output, session) {
   })
   
   output$messages <- renderPrint({
-    glue::glue_collapse(values$messages, sep="\n<br>\n")
+    glue::glue_collapse(rev(values$messages), sep="\n<br>\n")
   })
   
   observeEvent(input$queryGBIF, {
@@ -269,7 +320,7 @@ server <- function(input, output, session) {
       )) %>%
       
       leaflet::addScaleBar(position = "bottomright") %>%
-     
+      
       leafem::addMouseCoordinates() %>%
       
       leaflet.extras::addDrawToolbar(editOptions = editToolbarOptions(edit=TRUE),
@@ -332,7 +383,7 @@ server <- function(input, output, session) {
         provider = "Esri.WorldTopoMap",
          group = "Esri Topo Map",
         options = leaflet::providerTileOptions(noWrap = FALSE)
-        )  %>%
+      )  %>%
       
       leaflet::addProviderTiles(
         provider = "Stamen.Toner",
@@ -357,16 +408,16 @@ server <- function(input, output, session) {
         ),
         options = leaflet::layersControlOptions(collapsed = TRUE)
       )
-    })
-
-#####Map Events############
+  })
+  
+  #####Map Events############
   #add new point
   observeEvent(input$mymap_draw_new_feature, {
     point_data <- add_point(input$mymap_draw_new_feature)
     values$analysis_data <- bind_rows(values$analysis_data, point_data)
     
     msg <- format_new_point(input$mymap_draw_new_feature)
-    values$messages <- c(values$messages, info_message(msg))
+    values$messages <- c(values$messages, info_message(paste(msg)))
   })
   
   #move points
@@ -378,7 +429,7 @@ server <- function(input, output, session) {
       values$messages <- c(values$messages, info_message(msg))
     }
   })
-
+  
   #delete points = actually just marks them not to display
   observeEvent(input$mymap_draw_deleted_features, {
     for (feature in input$mymap_draw_deleted_features$features){
@@ -389,18 +440,19 @@ server <- function(input, output, session) {
     }
   })
   
-############################
-  observeEvent(req(nrow(values$analysis_data) > 0), {
-    shinyjs::enable("Analysis")
+  ############################
+  observeEvent(req(nrow(values$analysis_data) > 1), {
+    shinyjs::show("Analysis")
+    shinyjs::hide("analysis-info")
   }, once=TRUE)
   
   shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "User CSV") > 0), {
-    shinyjs::enable("csv_onoff")
+    shinyjs::show("csv_onoff")
     shinyWidgets::updateMaterialSwitch(session, "csv_onoff", value=TRUE)
   }, once=TRUE)
   
   shiny::observeEvent(req(sum(values$analysis_data$geocat_source == "GBIF") > 0), {
-    shinyjs::enable("gbif_onoff")
+    shinyjs::show("gbif_onoff")
     shinyWidgets::updateMaterialSwitch(session, "gbif_onoff", value=TRUE)
   }, once=TRUE)
   
@@ -426,12 +478,12 @@ server <- function(input, output, session) {
   }, ignoreInit=TRUE, ignoreNULL=TRUE)
   
   shiny::observeEvent(req(! is.null(values$native_geom)), {
-    shinyjs::enable("native_onoff")
+    shinyjs::show("native_onoff")
   })
   
   shiny::observeEvent(req(! is.null(values$native_geom)), {
     bb <- sf::st_bbox(values$native_geom)
-      leaflet::leafletProxy("mymap") %>%
+    leaflet::leafletProxy("mymap") %>%
       leaflet::clearGroup("powopolys") %>%
       #zoom to
       leaflet::fitBounds(bb[[1]], bb[[2]], bb[[3]], bb[[4]]) %>%
@@ -446,7 +498,7 @@ server <- function(input, output, session) {
           ) 
      
   })
-
+  
   #output to analysis on/off switch
   calculateAnalysis <- eventReactive(list(input$Analysis, values$analysis_data), {
     if (input$Analysis) {
@@ -455,10 +507,10 @@ server <- function(input, output, session) {
       if (nrow(points) > 0) {
         points <- select(points, longitude, latitude)
         projected_points <- simProjWiz(points)
-  
+        
         EOO <- eoosh(projected_points$p)
         AOO <- aoosh(projected_points$p)
-  
+        
         eoo_rating <- ratingEoo(EOO$area, abb=TRUE)
         aoo_rating <- ratingAoo(AOO$area, abb=TRUE)
         
@@ -503,7 +555,7 @@ server <- function(input, output, session) {
                 "km<sup>2</sup>", "-", results$aoo_rating)
         
         results_html <- HTML(paste(eoo_str, aoo_str, sep='<br>'))
-                             
+        
         HTML(paste0("<p style='color:orange;'>", results_html, "</p>"))
       } else {
         HTML("<p style='color:red;'> No valid points found</p>")
@@ -583,7 +635,7 @@ server <- function(input, output, session) {
   })
   
   shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
-
+    
     if (input$Analysis & !is.null(values$aoo_polygon)){
       leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
         leaflet::clearGroup("AOOpolys") %>%
