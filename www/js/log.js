@@ -1,7 +1,7 @@
 const $messageLog = $('#message-log');
 const options = { top: 0, left: 0, behavior:  'smooth' };
 
-
+// Scroll log back to top whenever a message is added so user can see it
 function elementAppendedMutation() {
   $messageLog[0].scroll(options);
 }
