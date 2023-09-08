@@ -1,6 +1,3 @@
-options(shiny.autoreload = TRUE)
-options(shiny.launch.browser = .rs.invokeShinyWindowExternal)
-
 #' @import shiny dplyr
 geocatApp <- function(...) {
   #### ui ####
