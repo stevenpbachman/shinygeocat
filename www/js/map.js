@@ -38,6 +38,63 @@ function fixA11yIssues () {
       $target[0].focus();
       evt.preventDefault();
     });
+
+
+  const setupFloatingDialog = function($control, $dialog) {
+    let clicking = false;
+
+    $control
+      .attr('aria-expanded', false)
+      .attr('aria-controls', $dialog.attr('id'));
+
+    $control.add($dialog)
+      .on('mousedown', () => clicking = true)
+      .on('mouseup', () => clicking = false);
+
+    window.addEventListener('focusin', function() {
+      if (clicking) { return; }
+
+      const $target = $(document.activeElement);
+
+      if ($control.attr('aria-expanded') === 'false') {
+        if ($target.is($control)) {
+          $dialog.insertAfter($control);
+          $control.attr('aria-expanded', true);
+        }
+      }
+      else {
+        if (!$target.is($control) && !$dialog.find($target).length) {
+          $control.attr('aria-expanded', false);
+        }
+      }
+    });
+  }
+
+  const keyboardDialogs = [
+    { control: '.leaflet-draw-draw-circlemarker', dialog: '#key-custom-point'  }
+  ];
+
+  keyboardDialogs.forEach(function({control, dialog}) {
+    setupFloatingDialog($(control), $(dialog));
+  });
+
+  const createClamp = function(min, max) {
+    return val => Math.min(Math.max(val, min), max);
+  }  
+
+  $('.floating-item input[type="number"]')
+    .each(function() {
+      const $input = $(this);
+      const min = parseFloat($input.attr('min'));
+      const max = parseFloat($input.attr('max'));
+      const clamp = createClamp(min, max);
+      $input.on('blur', () => $input.val(clamp($input.val())));
+    });
+
+  $('#key-add-point').on('click', function() {
+    if (document.activeElement !== this) { return; }
+    $('#custom-long')[0].focus();
+  });
 }
 
 

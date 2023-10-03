@@ -1,5 +1,25 @@
 # Functions for user input data from editing the map
 
+create_point_feature <- function(long, lat) {
+  list(
+    type = "Feature",
+    properties = list(
+      `_leaflet_id` = withr::with_options(
+        list(scipen = 999),
+        round(as.numeric(Sys.time()) * 1000)
+      ),
+      feature_type = "circlemarker",
+      radius = 7
+    ),
+    geometry = list(
+      type = 'Point',
+      coordinates = list(long, lat)
+    )
+  )
+}
+
+
+
 #' Create data for an additional point at a user-specified location.
 #'
 #' Takes a leaflet feature created during user map-editing and wrangles the
@@ -12,7 +32,7 @@
 add_point <- function(feature) {
   id <- paste0("user", feature$properties[["_leaflet_id"]])
   note <- format_new_point(feature)
-  
+
   tibble::tibble(
     latitude=feature$geometry$coordinates[[2]],
     longitude=feature$geometry$coordinates[[1]],
@@ -35,7 +55,7 @@ move_point <- function(feature, point_tbl) {
   
   notes <- point_tbl[point_tbl$geocat_id == id,]$geocat_notes
   notes <- paste0(notes, "> ", format_move_point(feature))
-    
+  
   point_tbl %>%
     mutate(
       latitude=ifelse(geocat_id == id, new_lat, latitude),
