@@ -1,11 +1,12 @@
 #' @import shiny dplyr
 geocatApp <- function(...) {
+  timeoutTime = 15
   #### ui ####
   ui <- fluidPage(
     theme = shinythemes::shinytheme("darkly"),
     shinyjs::useShinyjs(),
     
-    tags$html(lang = "en"),
+    tags$html(lang = "en", `data-timeout-mins` = timeoutTime),
     tags$head(
       tags$title("ShinyGeoCAT  - Geospatial Conservation Assessment Tools"), # WCAG modification
       tags$link(rel = "stylesheet", href = "style.css"),
@@ -228,6 +229,36 @@ geocatApp <- function(...) {
             ),
             actionButton("key-add-point", "Add point"),
           )
+        )
+      ),
+      tags$div(
+        id='disconnect-warning-dialog',
+        class="floating-item",
+        role="dialog",
+        `aria-modal`="true",
+        `aria-label`="Disconnect-warning dialog",
+        `aria-describedby`="disconnect-warning-description",
+        tags$div(
+          tags$p(
+            id="disconnect-warning-description",
+            "Your session will timeout in under 60 second due to inactivity."
+          ),
+          actionButton("continue", "Click to continue your session"),
+        )
+      ),
+      tags$div(
+        id='disconnect-dialog',
+        class="floating-item",
+        role="dialog",
+        `aria-modal`="true",
+        `aria-label`="Disconnection dialog",
+        `aria-describedby`="disconnect-description",
+        tags$div(
+          tags$p(
+            id="disconnect-description",
+            glue::glue("Your session has timed out because of {timeoutTime} minutes of inactivity.")
+          ),
+          actionButton("reload", "Click to restart your session"),
         )
       )
     )
@@ -462,6 +493,10 @@ geocatApp <- function(...) {
           opacity=1,
           fillOpacity=0.5
         )
+    })
+    
+    observeEvent(input$reload, {
+      session$reload()
     })
     
     #move points

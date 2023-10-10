@@ -345,6 +345,22 @@ section, section.well {
   text-align: right;
 }
 
+body > .floating-item[aria-modal="true"] {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: rgb(44,44,44);
+  z-index: 999999;
+  border: 1px solid black;
+  filter: drop-shadow(-3px 3px black);
+}
+
+.container-fluid[inert] {
+  filter: grayscale(50%) brightness(20%);
+}
 
 
 @media (min-width: 900px) {
