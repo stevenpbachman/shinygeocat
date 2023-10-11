@@ -24,179 +24,194 @@ geocatApp <- function(...) {
     ),
     
     tags$main(
-      # Sidebar panel for inputs
-      tags$section(
-        id="controls-section",
-        class="well",
-        
-        tags$details(
-          open="open",
-          tags$summary(tags$h2("Data")),
-          
-          tags$details(
-            class="help",
-            tags$summary("Help"),
-            "Add some instructions here explaining how the data section works"
-          ),
-          
+      tabsetPanel(
+        tabPanel(
+          "Analysis",
+          # Sidebar panel for inputs
           tags$div(
-            id="csv-block",
-            class="data-block",
-            tags$label(
-              "for"="csv_in",
-              "Upload a CSV with at least 'longitude', 'latitude' fields",
-            ),
-            tags$div(
-              id = "file-wrapper",
-              tags$input(
-                id="csv_in",
-                type="file",
-                accept = ".csv",
+            id="analysis-grid",
+            tags$section(
+              id="controls-section",
+              class="well",
+              
+              tags$details(
+                open="open",
+                tags$summary(tags$h2("Data")),
+                
+                tags$details(
+                  class="help",
+                  tags$summary("Help"),
+                  "Add some instructions here explaining how the data section works"
+                ),
+                
+                tags$div(
+                  id="csv-block",
+                  class="data-block",
+                  tags$label(
+                    "for"="csv_in",
+                    "Upload a CSV with at least 'longitude', 'latitude' fields",
+                  ),
+                  tags$div(
+                    id = "file-wrapper",
+                    tags$input(
+                      id="csv_in",
+                      type="file",
+                      accept = ".csv",
+                    ),
+                    tags$span(
+                      "aria-hidden" = "true",
+                      "class" = "file-text",
+                      'No file uploaded'
+                    )
+                  ),
+                  tags$div(
+                    id = paste("csv_in_progress", sep = ""),
+                    class = "progress active shiny-file-input-progress",
+                    tags$div(class = "progress-bar")
+                  ),
+                  shinyjs::hidden(
+                    ## csv points on/off ----
+                    shinyWidgets::prettySwitch(
+                      inputId = "csv_onoff",
+                      label = "CSV",
+                      value = TRUE,
+                      status = "primary",
+                      fill = TRUE
+                    )
+                  )
+                ),
+                
+                tags$div(
+                  id="gbif-block",
+                  class="data-block text-input-block",
+                  tags$label("for"="gbif_name", "Enter a taxon name to load points from GBIF:"),
+                  tags$div(
+                    "class" = "text-input-wrapper",
+                    textInput("gbif_name", label=NULL)
+                  ),
+                  tags$span(id="gbif-hint", class = "hint", "e.g. Cyphostemma njegerre"),
+                  actionButton("queryGBIF", "Load points"),
+                  tags$span(
+                    "class" = "toggle-wrapper",
+                    shinyjs::hidden(
+                      ## GBIF points on/off ----
+                      shinyWidgets::prettySwitch(
+                        inputId = "gbif_onoff",
+                        label = "GBIF",
+                        value = TRUE,
+                        status = "success",
+                        fill = TRUE
+                      )
+                    )
+                  )
+                ),
+                
+                tags$div(
+                  id="powo-block",
+                  class="data-block text-input-block",
+                  tags$label("for"="powo_id", "Enter a POWO ID for a native range map:"),
+                  tags$div(
+                    "class" = "text-input-wrapper",
+                    textInput("powo_id", label=NULL)
+                  ),
+                  tags$span(
+                    "id" = "powo-hint",
+                    "class" = "hint",
+                    "e.g. 68179-1. Search",
+                    tags$a(href="https://powo.science.kew.org/", target="_blank", "POWO"),
+                    "to get accepted name ID."
+                  ),
+                  actionButton("queryPOWO", "Load map"),
+                  tags$span(
+                    "class" = "toggle-wrapper",
+                    shinyjs::hidden(
+                      shinyWidgets::prettySwitch(
+                        inputId = "native_onoff",
+                        label = "Exclude non-native",
+                        value = FALSE,
+                        status = "danger",
+                        fill = TRUE
+                      )
+                    )
+                  )
+                )
               ),
-              tags$span(
-                "aria-hidden" = "true",
-                "class" = "file-text",
-                'No file uploaded'
-              )
-            ),
-            tags$div(
-              id = paste("csv_in_progress", sep = ""),
-              class = "progress active shiny-file-input-progress",
-              tags$div(class = "progress-bar")
-            ),
-            shinyjs::hidden(
-              ## csv points on/off ----
-              shinyWidgets::prettySwitch(
-                inputId = "csv_onoff",
-                label = "CSV",
-                value = TRUE,
-                status = "primary",
-                fill = TRUE
-              )
-            )
-          ),
-          
-          tags$div(
-            id="gbif-block",
-            class="data-block text-input-block",
-            tags$label("for"="gbif_name", "Enter a taxon name to load points from GBIF:"),
-            tags$div(
-              "class" = "text-input-wrapper",
-              textInput("gbif_name", label=NULL)
-            ),
-            tags$span(id="gbif-hint", class = "hint", "e.g. Cyphostemma njegerre"),
-            actionButton("queryGBIF", "Load points"),
-            tags$span(
-              "class" = "toggle-wrapper",
-              shinyjs::hidden(
-                ## GBIF points on/off ----
-                shinyWidgets::prettySwitch(
-                  inputId = "gbif_onoff",
-                  label = "GBIF",
-                  value = TRUE,
-                  status = "success",
-                  fill = TRUE
+              
+              tags$details(
+                open="open",
+                tags$summary(tags$h2("Analysis")),
+                
+                tags$details(
+                  class="help",
+                  tags$summary("Help"),
+                  "Add some instructions here explaining how the analysis section works"
+                ),
+                
+                tags$p(
+                  "id" = "analysis-info",
+                  "Analysis requires at least two data points"  
+                ),
+                
+                shinyjs::hidden(
+                  shinyWidgets::prettySwitch(
+                    inputId = "Analysis",
+                    label = "Analysis on/off",
+                    value = FALSE,
+                    status = "success",
+                  )
+                ),
+                
+                shiny::htmlOutput("res_title"),
+                shiny::htmlOutput("text"),
+              ),
+              
+              tags$details(
+                open="open",
+                tags$summary(tags$h2("Next Steps")),
+                
+                tags$details(
+                  class="help",
+                  tags$summary("Help"),
+                  "Add some instructions here explaining how the next steps section works"
+                ),
+                
+                tags$div(
+                  id="next-step-buttons",
+                  downloadButton("download_csv", "Download CSV file"),
+                  actionButton("reset", "Reset")
                 )
               )
-            )
-          ),
-          
-          tags$div(
-            id="powo-block",
-            class="data-block text-input-block",
-            tags$label("for"="powo_id", "Enter a POWO ID for a native range map:"),
-            tags$div(
-              "class" = "text-input-wrapper",
-              textInput("powo_id", label=NULL)
             ),
-            tags$span(
-              "id" = "powo-hint",
-              "class" = "hint",
-              "e.g. 68179-1. Search",
-              tags$a(href="https://powo.science.kew.org/", target="_blank", "POWO"),
-              "to get accepted name ID."
+            
+            #### Main panel for displaying outputs ####
+            
+            tags$section(
+              id="map-section",
+              div(
+                leaflet::leafletOutput("mymap", height = 550)
+              )
             ),
-            actionButton("queryPOWO", "Load map"),
-            tags$span(
-              "class" = "toggle-wrapper",
-              shinyjs::hidden(
-                shinyWidgets::prettySwitch(
-                  inputId = "native_onoff",
-                  label = "Exclude non-native",
-                  value = FALSE,
-                  status = "danger",
-                  fill = TRUE
-                )
+            
+            tags$section(
+              id="log-section",
+              class="well",
+              tags$h2("Message Log"),
+              tags$div(
+                id = "message-log",
+                htmlOutput("messages") 
               )
             )
           )
         ),
-        
-        tags$details(
-          open="open",
-          tags$summary(tags$h2("Analysis")),
-          
-          tags$details(
-            class="help",
-            tags$summary("Help"),
-            "Add some instructions here explaining how the analysis section works"
-          ),
-          
-          tags$p(
-            "id" = "analysis-info",
-            "Analysis requires at least two data points"  
-          ),
-          
-          shinyjs::hidden(
-            shinyWidgets::prettySwitch(
-              inputId = "Analysis",
-              label = "Analysis on/off",
-              value = FALSE,
-              status = "success",
-            )
-          ),
-          
-          shiny::htmlOutput("res_title"),
-          shiny::htmlOutput("text"),
-        ),
-        
-        tags$details(
-          open="open",
-          tags$summary(tags$h2("Next Steps")),
-          
-          tags$details(
-            class="help",
-            tags$summary("Help"),
-            "Add some instructions here explaining how the next steps section works"
-          ),
-          
-          tags$div(
-            id="next-step-buttons",
-            downloadButton("download_csv", "Download CSV file"),
-            actionButton("reset", "Reset")
+        tabPanel(
+          "Help",
+          tags$section(
+            class="well",
+            tags$h2('Help'),
+            tags$p("Help goes here")
           )
         )
-      ),
-      
-      #### Main panel for displaying outputs ####
-      
-      tags$section(
-        id="map-section",
-        div(
-          leaflet::leafletOutput("mymap", height = 550)
-        )
-      ),
-      
-      tags$section(
-        id="log-section",
-        class="well",
-        tags$h2("Message Log"),
-        tags$div(
-          id = "message-log",
-          htmlOutput("messages") 
-        )
-      ),
-      
+      )
     ),
     
     tags$footer(
