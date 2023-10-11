@@ -362,6 +362,9 @@ body > .floating-item[aria-modal="true"] {
   filter: grayscale(50%) brightness(20%);
 }
 
+[id="log-section"] h2 {
+  font-size: calc(var(--h2-size) * 0.85);
+}
 
 @media (min-width: 900px) {
   main {
