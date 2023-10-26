@@ -63,7 +63,7 @@ h2 {
   margin-bottom: 0;
 }
 
-[id="controls-section"] :is(button, a.btn):focus-visible {
+:is([id="controls-section"], .floating-item) :is(button, a.btn):focus-visible {
   text-decoration: underline dashed;
 }
 
@@ -261,7 +261,7 @@ section, section.well {
   outline: 4px solid #0ce3ac;
 } 
 
-[id="mymap"] :focus {
+[id="mymap"] a:focus {
   color: black;
 }
 
@@ -272,6 +272,80 @@ section, section.well {
 .hint {
   font-size: 0.8em;
 }
+
+[id="offscreen-items"], [aria-expanded="false"] ~ .floating-item  {
+  position: absolute;
+  left:     -10000px;
+  top:      auto;
+  width:    1px;
+  height:   1px;
+  overflow: hidden;
+}
+
+[id="offscreen-items"] > * > *, [aria-expanded="false"] ~ .floating-item {
+  display: none;
+}
+
+[id="mymap"] [aria-expanded="true"]:not(:focus) {
+  outline: 1px solid #303030;
+  outline-offset: 4px;
+}
+
+.floating-item {
+  background-color: rgba(44,44,44, 0.5);
+  position: absolute;
+  left: 40px;
+  top: 0;
+  padding: 1em;
+  border-radius: 4px;
+  font-size: 15px;
+  --webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.floating-item .input-wrapper {
+  width: 120px;
+}
+
+.floating-item :is(label, p){
+  background-color: rgb(44,44,44);
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.floating-item label  {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  text-align: center;
+  width: 100%;
+  margin-bottom: -2px;
+}
+
+.floating-item input:focus {
+  outline: 2px solid rgb(44,44,44) !important;
+  outline-offset: -5px;
+}
+
+[id="key-custom-point"] > * {
+  width: 400px;
+}
+
+[id="key-custom-point"] .floating-form  {
+  display: flex;
+  justify-content: left;
+  align-items: end;
+  column-gap: 1em;
+}
+
+[id="key-custom-point"] .form-group {
+  margin-bottom: 0;
+}
+
+[id="key-custom-point"] input {
+  text-align: right;
+}
+
+
 
 @media (min-width: 900px) {
   main {
