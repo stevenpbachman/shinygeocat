@@ -1,12 +1,19 @@
 #' @import shiny dplyr
 geocatApp <- function(...) {
   timeoutTime = 15
+  circleRadius = 7
+  customCol = "#ECAC7C"
+  gbifCol = "#509E2F"
+  csvCol = "#0078b4"
+  gbifOffCol = "#a5cd96"
+  csvOffCol = "#7fbbd9"
+  
   #### ui ####
   ui <- fluidPage(
     theme = shinythemes::shinytheme("darkly"),
     shinyjs::useShinyjs(),
     
-    tags$html(lang = "en", `data-timeout-mins` = timeoutTime),
+    tags$html(lang = "en", `data-timeout-mins` = timeoutTime, `data-circle-radius` = circleRadius),
     tags$head(
       tags$title("ShinyGeoCAT  - Geospatial Conservation Assessment Tools"), # WCAG modification
       tags$link(rel = "stylesheet", href = "style.css"),
@@ -393,11 +400,11 @@ geocatApp <- function(...) {
                                        targetGroup = 'mappoints',
                                        circleMarkerOptions=drawCircleMarkerOptions(
                                          color="#FFFFFF",
-                                         radius=7,
+                                         radius = circleRadius,
                                          stroke=T,
                                          weight=2.5,
                                          fill=T,
-                                         fillColor="#ECAC7C",
+                                         fillColor=customCol,
                                          opacity=1,
                                          fillOpacity=0.5,
                                          repeatMode = TRUE,
@@ -500,11 +507,11 @@ geocatApp <- function(...) {
           lng = long,
           lat = lat,
           color="#FFFFFF",
-          radius=7,
+          radius = circleRadius,
           stroke=T,
           weight=2.5,
           fill=T,
-          fillColor="#ECAC7C",
+          fillColor=customCol,
           opacity=1,
           fillOpacity=0.5
         )
@@ -675,12 +682,12 @@ geocatApp <- function(...) {
       points <- filter(values$analysis_data, geocat_source != "User point")
       
       used_pal <- colorFactor(
-        palette=c("#509E2F", "#0078b4"),
+        palette=c(gbifCol, csvCol),
         domain=c("GBIF", "User CSV")
       )
       
       unused_pal <- colorFactor(
-        palette=c("#a5cd96", "#7fbbd9"),
+        palette=c(gbifOffCol, csvOffCol),
         domain=c("GBIF", "User CSV")
       )
       
@@ -701,7 +708,7 @@ geocatApp <- function(...) {
           popup = ~pcontent,
           layerId = ~geocat_id,
           group="mappoints",
-          radius = 7,
+          radius = circleRadius,
           color="#FFFFFF",
           stroke = T,
           weight = 2.5,
@@ -709,13 +716,13 @@ geocatApp <- function(...) {
           fillColor = ~used_pal(geocat_source),
           fillOpacity = 0.5,
           #options = markerOptions(draggable = FALSE),
-          options = pathOptions(pane = "mappoints"),
+          options = pathOptions(pane = "mappoints", className = ~factor(geocat_source, levels=c("GBIF", "User CSV"), labels=c("shape-square", "shape-hexagon"))),
           data=used_points
         ) %>%
         leaflet::addCircleMarkers(
           layerId = ~geocat_id,
           group="unmappoints",
-          radius = 7,
+          radius = circleRadius,
           color="#BBBBBB",
           stroke = T,
           weight = 2,
@@ -723,7 +730,7 @@ geocatApp <- function(...) {
           fillColor = ~unused_pal(geocat_source),
           fillOpacity = 0.2,
           #options = markerOptions(draggable = FALSE),
-          options = pathOptions(pane = "unmappoints"),
+          options = pathOptions(pane = "unmappoints", className = ~factor(geocat_source, levels=c("GBIF", "User CSV"), labels=c("shape-square", "shape-hexagon"))),
           data=unused_points
         )
     })
