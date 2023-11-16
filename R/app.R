@@ -1,11 +1,19 @@
 #' @import shiny dplyr
 geocatApp <- function(...) {
+  timeoutTime = 15
+  circleRadius = 7
+  customCol = "#ECAC7C"
+  gbifCol = "#509E2F"
+  csvCol = "#0078b4"
+  gbifOffCol = "#a5cd96"
+  csvOffCol = "#7fbbd9"
+  
   #### ui ####
   ui <- fluidPage(
     theme = shinythemes::shinytheme("darkly"),
     shinyjs::useShinyjs(),
     
-    tags$html(lang = "en"),
+    tags$html(lang = "en", `data-timeout-mins` = timeoutTime, `data-circle-radius` = circleRadius),
     tags$head(
       tags$title("ShinyGeoCAT  - Geospatial Conservation Assessment Tools"), # WCAG modification
       tags$link(rel = "stylesheet", href = "style.css"),
@@ -23,179 +31,194 @@ geocatApp <- function(...) {
     ),
     
     tags$main(
-      # Sidebar panel for inputs
-      tags$section(
-        id="controls-section",
-        class="well",
-        
-        tags$details(
-          open="open",
-          tags$summary(tags$h2("Data")),
-          
-          tags$details(
-            class="help",
-            tags$summary("Help"),
-            "Add some instructions here explaining how the data section works"
-          ),
-          
+      tabsetPanel(
+        tabPanel(
+          "Analysis",
+          # Sidebar panel for inputs
           tags$div(
-            id="csv-block",
-            class="data-block",
-            tags$label(
-              "for"="csv_in",
-              "Upload a CSV with at least 'longitude', 'latitude' fields",
-            ),
-            tags$div(
-              id = "file-wrapper",
-              tags$input(
-                id="csv_in",
-                type="file",
-                accept = ".csv",
+            id="analysis-grid",
+            tags$section(
+              id="controls-section",
+              class="well",
+              
+              tags$details(
+                open="open",
+                tags$summary(tags$h2("Data")),
+                
+                tags$details(
+                  class="help",
+                  tags$summary("Help"),
+                  "Add some instructions here explaining how the data section works"
+                ),
+                
+                tags$div(
+                  id="csv-block",
+                  class="data-block",
+                  tags$label(
+                    "for"="csv_in",
+                    "Upload a CSV with at least 'longitude', 'latitude' fields",
+                  ),
+                  tags$div(
+                    id = "file-wrapper",
+                    tags$input(
+                      id="csv_in",
+                      type="file",
+                      accept = ".csv",
+                    ),
+                    tags$span(
+                      "aria-hidden" = "true",
+                      "class" = "file-text",
+                      'No file uploaded'
+                    )
+                  ),
+                  tags$div(
+                    id = paste("csv_in_progress", sep = ""),
+                    class = "progress active shiny-file-input-progress",
+                    tags$div(class = "progress-bar")
+                  ),
+                  shinyjs::hidden(
+                    ## csv points on/off ----
+                    shinyWidgets::prettySwitch(
+                      inputId = "csv_onoff",
+                      label = "CSV",
+                      value = TRUE,
+                      status = "primary",
+                      fill = TRUE
+                    )
+                  )
+                ),
+                
+                tags$div(
+                  id="gbif-block",
+                  class="data-block text-input-block",
+                  tags$label("for"="gbif_name", "Enter a taxon name to load points from GBIF:"),
+                  tags$div(
+                    "class" = "text-input-wrapper",
+                    textInput("gbif_name", label=NULL)
+                  ),
+                  tags$span(id="gbif-hint", class = "hint", "e.g. Cyphostemma njegerre"),
+                  actionButton("queryGBIF", "Load points"),
+                  tags$span(
+                    "class" = "toggle-wrapper",
+                    shinyjs::hidden(
+                      ## GBIF points on/off ----
+                      shinyWidgets::prettySwitch(
+                        inputId = "gbif_onoff",
+                        label = "GBIF",
+                        value = TRUE,
+                        status = "success",
+                        fill = TRUE
+                      )
+                    )
+                  )
+                ),
+                
+                tags$div(
+                  id="powo-block",
+                  class="data-block text-input-block",
+                  tags$label("for"="powo_id", "Enter a POWO ID for a native range map:"),
+                  tags$div(
+                    "class" = "text-input-wrapper",
+                    textInput("powo_id", label=NULL)
+                  ),
+                  tags$span(
+                    "id" = "powo-hint",
+                    "class" = "hint",
+                    "e.g. 68179-1. Search",
+                    tags$a(href="https://powo.science.kew.org/", target="_blank", "POWO"),
+                    "to get accepted name ID."
+                  ),
+                  actionButton("queryPOWO", "Load map"),
+                  tags$span(
+                    "class" = "toggle-wrapper",
+                    shinyjs::hidden(
+                      shinyWidgets::prettySwitch(
+                        inputId = "native_onoff",
+                        label = "Exclude non-native",
+                        value = FALSE,
+                        status = "danger",
+                        fill = TRUE
+                      )
+                    )
+                  )
+                )
               ),
-              tags$span(
-                "aria-hidden" = "true",
-                "class" = "file-text",
-                'No file uploaded'
-              )
-            ),
-            tags$div(
-              id = paste("csv_in_progress", sep = ""),
-              class = "progress active shiny-file-input-progress",
-              tags$div(class = "progress-bar")
-            ),
-            shinyjs::hidden(
-              ## csv points on/off ----
-              shinyWidgets::prettySwitch(
-                inputId = "csv_onoff",
-                label = "CSV",
-                value = TRUE,
-                status = "primary",
-                fill = TRUE
-              )
-            )
-          ),
-          
-          tags$div(
-            id="gbif-block",
-            class="data-block text-input-block",
-            tags$label("for"="gbif_name", "Enter a taxon name to load points from GBIF:"),
-            tags$div(
-              "class" = "text-input-wrapper",
-              textInput("gbif_name", label=NULL)
-            ),
-            tags$span(id="gbif-hint", class = "hint", "e.g. Cyphostemma njegerre"),
-            actionButton("queryGBIF", "Load points"),
-            tags$span(
-              "class" = "toggle-wrapper",
-              shinyjs::hidden(
-                ## GBIF points on/off ----
-                shinyWidgets::prettySwitch(
-                  inputId = "gbif_onoff",
-                  label = "GBIF",
-                  value = TRUE,
-                  status = "success",
-                  fill = TRUE
+              
+              tags$details(
+                open="open",
+                tags$summary(tags$h2("Analysis")),
+                
+                tags$details(
+                  class="help",
+                  tags$summary("Help"),
+                  "Add some instructions here explaining how the analysis section works"
+                ),
+                
+                tags$p(
+                  "id" = "analysis-info",
+                  "Analysis requires at least two data points"  
+                ),
+                
+                shinyjs::hidden(
+                  shinyWidgets::prettySwitch(
+                    inputId = "Analysis",
+                    label = "Analysis on/off",
+                    value = FALSE,
+                    status = "success",
+                  )
+                ),
+                
+                shiny::htmlOutput("res_title"),
+                shiny::htmlOutput("text"),
+              ),
+              
+              tags$details(
+                open="open",
+                tags$summary(tags$h2("Next Steps")),
+                
+                tags$details(
+                  class="help",
+                  tags$summary("Help"),
+                  "Add some instructions here explaining how the next steps section works"
+                ),
+                
+                tags$div(
+                  id="next-step-buttons",
+                  downloadButton("download_csv", "Download CSV file"),
+                  actionButton("reset", "Reset")
                 )
               )
-            )
-          ),
-          
-          tags$div(
-            id="powo-block",
-            class="data-block text-input-block",
-            tags$label("for"="powo_id", "Enter a POWO ID for a native range map:"),
-            tags$div(
-              "class" = "text-input-wrapper",
-              textInput("powo_id", label=NULL)
             ),
-            tags$span(
-              "id" = "powo-hint",
-              "class" = "hint",
-              "e.g. 68179-1. Search",
-              tags$a(href="https://powo.science.kew.org/", target="_blank", "POWO"),
-              "to get accepted name ID."
+            
+            #### Main panel for displaying outputs ####
+            
+            tags$section(
+              id="map-section",
+              div(
+                leaflet::leafletOutput("mymap", height = 550)
+              )
             ),
-            actionButton("queryPOWO", "Load map"),
-            tags$span(
-              "class" = "toggle-wrapper",
-              shinyjs::hidden(
-                shinyWidgets::prettySwitch(
-                  inputId = "native_onoff",
-                  label = "Exclude non-native",
-                  value = FALSE,
-                  status = "danger",
-                  fill = TRUE
-                )
+            
+            tags$section(
+              id="log-section",
+              class="well",
+              tags$h2("Message Log"),
+              tags$div(
+                id = "message-log",
+                htmlOutput("messages") 
               )
             )
           )
         ),
-        
-        tags$details(
-          open="open",
-          tags$summary(tags$h2("Analysis")),
-          
-          tags$details(
-            class="help",
-            tags$summary("Help"),
-            "Add some instructions here explaining how the analysis section works"
-          ),
-          
-          tags$p(
-            "id" = "analysis-info",
-            "Analysis requires at least two data points"  
-          ),
-          
-          shinyjs::hidden(
-            shinyWidgets::prettySwitch(
-              inputId = "Analysis",
-              label = "Analysis on/off",
-              value = FALSE,
-              status = "success",
-            )
-          ),
-          
-          shiny::htmlOutput("res_title"),
-          shiny::htmlOutput("text"),
-        ),
-        
-        tags$details(
-          open="open",
-          tags$summary(tags$h2("Next Steps")),
-          
-          tags$details(
-            class="help",
-            tags$summary("Help"),
-            "Add some instructions here explaining how the next steps section works"
-          ),
-          
-          tags$div(
-            id="next-step-buttons",
-            downloadButton("download_csv", "Download CSV file"),
-            actionButton("reset", "Reset")
+        tabPanel(
+          "Help",
+          tags$section(
+            class="well",
+            tags$h2('Help'),
+            tags$p("Help goes here")
           )
         )
-      ),
-      
-      #### Main panel for displaying outputs ####
-      
-      tags$section(
-        id="map-section",
-        div(
-          leaflet::leafletOutput("mymap", height = 550)
-        )
-      ),
-      
-      tags$section(
-        id="log-section",
-        class="well",
-        tags$h2("Message Log"),
-        tags$div(
-          id = "message-log",
-          htmlOutput("messages") 
-        )
-      ),
-      
+      )
     ),
     
     tags$footer(
@@ -228,6 +251,36 @@ geocatApp <- function(...) {
             ),
             actionButton("key-add-point", "Add point"),
           )
+        )
+      ),
+      tags$div(
+        id='disconnect-warning-dialog',
+        class="floating-item",
+        role="dialog",
+        `aria-modal`="true",
+        `aria-label`="Disconnect-warning dialog",
+        `aria-describedby`="disconnect-warning-description",
+        tags$div(
+          tags$p(
+            id="disconnect-warning-description",
+            "Your session will timeout in under 60 second due to inactivity."
+          ),
+          actionButton("continue", "Click to continue your session"),
+        )
+      ),
+      tags$div(
+        id='disconnect-dialog',
+        class="floating-item",
+        role="dialog",
+        `aria-modal`="true",
+        `aria-label`="Disconnection dialog",
+        `aria-describedby`="disconnect-description",
+        tags$div(
+          tags$p(
+            id="disconnect-description",
+            glue::glue("Your session has timed out because of {timeoutTime} minutes of inactivity.")
+          ),
+          actionButton("reload", "Click to restart your session"),
         )
       )
     )
@@ -347,11 +400,11 @@ geocatApp <- function(...) {
                                        targetGroup = 'mappoints',
                                        circleMarkerOptions=drawCircleMarkerOptions(
                                          color="#FFFFFF",
-                                         radius=7,
+                                         radius = circleRadius,
                                          stroke=T,
                                          weight=2.5,
                                          fill=T,
-                                         fillColor="#ECAC7C",
+                                         fillColor=customCol,
                                          opacity=1,
                                          fillOpacity=0.5,
                                          repeatMode = TRUE,
@@ -454,14 +507,18 @@ geocatApp <- function(...) {
           lng = long,
           lat = lat,
           color="#FFFFFF",
-          radius=7,
+          radius = circleRadius,
           stroke=T,
           weight=2.5,
           fill=T,
-          fillColor="#ECAC7C",
+          fillColor=customCol,
           opacity=1,
           fillOpacity=0.5
         )
+    })
+    
+    observeEvent(input$reload, {
+      session$reload()
     })
     
     #move points
@@ -625,12 +682,12 @@ geocatApp <- function(...) {
       points <- filter(values$analysis_data, geocat_source != "User point")
       
       used_pal <- colorFactor(
-        palette=c("#509E2F", "#0078b4"),
+        palette=c(gbifCol, csvCol),
         domain=c("GBIF", "User CSV")
       )
       
       unused_pal <- colorFactor(
-        palette=c("#a5cd96", "#7fbbd9"),
+        palette=c(gbifOffCol, csvOffCol),
         domain=c("GBIF", "User CSV")
       )
       
@@ -651,7 +708,7 @@ geocatApp <- function(...) {
           popup = ~pcontent,
           layerId = ~geocat_id,
           group="mappoints",
-          radius = 7,
+          radius = circleRadius,
           color="#FFFFFF",
           stroke = T,
           weight = 2.5,
@@ -659,13 +716,13 @@ geocatApp <- function(...) {
           fillColor = ~used_pal(geocat_source),
           fillOpacity = 0.5,
           #options = markerOptions(draggable = FALSE),
-          options = pathOptions(pane = "mappoints"),
+          options = pathOptions(pane = "mappoints", className = ~factor(geocat_source, levels=c("GBIF", "User CSV"), labels=c("shape-square", "shape-hexagon"))),
           data=used_points
         ) %>%
         leaflet::addCircleMarkers(
           layerId = ~geocat_id,
           group="unmappoints",
-          radius = 7,
+          radius = circleRadius,
           color="#BBBBBB",
           stroke = T,
           weight = 2,
@@ -673,7 +730,7 @@ geocatApp <- function(...) {
           fillColor = ~unused_pal(geocat_source),
           fillOpacity = 0.2,
           #options = markerOptions(draggable = FALSE),
-          options = pathOptions(pane = "unmappoints"),
+          options = pathOptions(pane = "unmappoints", className = ~factor(geocat_source, levels=c("GBIF", "User CSV"), labels=c("shape-square", "shape-hexagon"))),
           data=unused_points
         )
     })

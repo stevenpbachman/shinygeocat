@@ -15,6 +15,10 @@ a:focus {
   outline-offset: unset;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body > div.container-fluid {
   max-width: 1500px;
   display: flex;
@@ -47,7 +51,7 @@ header h1 {
   color: lightgrey;
 }
 
-main {
+[id="analysis-grid"]{
   display: flex;
   flex-direction: column;
   row-gap: 1em;
@@ -225,11 +229,6 @@ body > div.container-fluid {
   row-gap: 1em;
 }
 
-main {
-  display: flex;
-  flex-direction: column;
-}
-
 section, section.well {
   border: 1px solid #999999;
 }
@@ -345,10 +344,44 @@ section, section.well {
   text-align: right;
 }
 
+body > .floating-item[aria-modal="true"] {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background-color: rgb(44,44,44);
+  z-index: 999999;
+  border: 1px solid black;
+  filter: drop-shadow(-3px 3px black);
+}
 
+.container-fluid[inert] {
+  filter: grayscale(50%) brightness(20%);
+}
+
+[id="log-section"] h2 {
+  font-size: calc(var(--h2-size) * 0.85);
+}
+
+.tabbable > ul > li {
+  width: 100px;
+  text-align: center;
+  
+}
+
+.tabbable > ul > li a {
+  text-decoration: none;
+}
+
+.tabbable > ul > li.active a[aria-selected="true"]{
+  font-weight: bold;
+  background-color: #303030;
+}
 
 @media (min-width: 900px) {
-  main {
+  [id="analysis-grid"]{
     min-height: 0;
     display: grid;
     row-gap: 1em;
@@ -390,7 +423,7 @@ section, section.well {
   }
 
   @media (min-width: 1200px) {
-    main {
+    [id="analysis-grid"]{
       grid-template-columns: 475px 1fr;
     }
   
@@ -436,13 +469,13 @@ section, section.well {
     }
   }
 
-  @media (min-height: 850px) {
+  @media (min-height: 1129px) {
     body > div.container-fluid {
       height: 100vh;
       overflow: hidden;
     }
 
-    main {
+    [id="analysis-grid"] {
       flex: 1 1 auto;
       min-height: 0;
       grid-template-rows: 550px 1fr;

@@ -1,11 +1,13 @@
-
-function fixA11yIssues () {
+function fixSearchInput() {
   // Search bar should be of type search rather than have that role
   $('.search-input')
-    .attr('type', 'search')
-    .removeAttr('role');
+  .attr('type', 'search')
+  .removeAttr('role');
+}
 
-  // The rest of this function makes sure tabbing around works properly.
+
+function fixKeyboard() {
+  // Make sure tabbing around works properly.
   // Specifically, the focus doesn't get lost when opening or closing
   // the layers popup
   const $searchButton = $('.leaflet-control-search')
@@ -39,7 +41,7 @@ function fixA11yIssues () {
       evt.preventDefault();
     });
 
-
+  // Add floating dialog for keyboard users
   const setupFloatingDialog = function($control, $dialog) {
     let clicking = false;
 
@@ -95,6 +97,100 @@ function fixA11yIssues () {
     if (document.activeElement !== this) { return; }
     $('#custom-long')[0].focus();
   });
+}
+
+
+function fixShapes() {
+  const $html = $(document.documentElement);
+  const circleRadius = parseFloat($html.attr('data-circle-radius'));
+
+  const area = Math.PI * Math.pow(circleRadius, 2);
+
+
+  const createPathTransformer = function(edgeLength, coords) {
+    const getPathMid = path => `M${path.split(/[A-Z]/i)[1]} m ${circleRadius}, 0`; 
+
+    const end = coords.map(function([x, y], i) {
+      if (i === 0) {
+        return `m ${x * edgeLength}, ${y * edgeLength}`;
+      }
+      const [px, py] = coords[i-1];
+      const dx = (x - px) * edgeLength;
+      const dy = (y - py) * edgeLength;
+      const z = i === (coords.length - 1) ? 'Z' : ''; 
+      return `l ${dx}, ${dy} ${z}`;
+    }, '');
+
+    return function(path) {
+      const start = getPathMid(path);
+      return `${start} ${end}`;
+    }
+  }
+
+
+  const squarifyPath = (function() {
+    const edgeLength = Math.sqrt(area);
+
+    const coords = [
+      [-1/2, -1/2],
+      [1/2, -1/2],
+      [1/2, 1/2],
+      [-1/2, 1/2]
+    ];
+
+    return createPathTransformer(edgeLength, coords);
+  })();
+
+
+  const hexifyPath = (function() {
+    const edgeLength = Math.sqrt((2*area) / (3*Math.sqrt(3)));
+    const rt3o2 = Math.sqrt(3) / 2;
+
+    const coords = [
+      [-1/2, -rt3o2],
+      [1/2, -rt3o2],
+      [1, 0],
+      [1/2, rt3o2],
+      [-1/2, rt3o2],
+      [-1, 0]
+    ];
+
+    return createPathTransformer(edgeLength, coords);
+  })();
+
+  const transformMarkerPath = function(marker, shape) {
+    const path = marker.getAttribute('d');
+    if (path === "M0 0") { return; } // offscreen
+    if (path === marker.savedPath) { return; } // already altered shape
+    const pathTransformer = { square: squarifyPath, hexagon: hexifyPath }[shape];
+    marker.savedPath = pathTransformer(path);
+    marker.setAttribute('d', marker.savedPath);
+  }
+
+  const childListMutateCallback = function (mutationList) {
+    mutationList.forEach(function(d) {
+      const mutatedElements = d.type === 'childList' ? d.addedNodes : [d.target];
+      mutatedElements.forEach(function(el) {
+        const $el = $(el);
+        if ($el.hasClass('shape-square')) { transformMarkerPath(el, 'square'); }
+        else if ($el.hasClass('shape-hexagon')) { transformMarkerPath(el, 'hexagon'); }
+      });
+    });
+  }
+
+  const $panes = $('#mymap :is(.leaflet-mappoints-pane, .leaflet-unmappoints-pane)');
+
+  const elementMutatedObserver = new MutationObserver(childListMutateCallback);
+  const config = { childList: true, subtree: true, attributes: true, attributeList: ['d'] };
+  $panes.each(function() { elementMutatedObserver.observe(this, config); });
+
+}
+
+
+function fixA11yIssues () {
+  fixSearchInput();  
+  fixKeyboard();
+  fixShapes();
 }
 
 
