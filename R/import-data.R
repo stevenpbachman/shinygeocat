@@ -51,7 +51,7 @@ import_csv <- function(path) {
 #' @examples
 #' points <- import_gbif("Poa annua")
 #' 
-import_gbif <- function(name, limit=900) {
+import_gbif <- function(name, limit=5000) {
   points <- list()
   end_of_records <- FALSE
   i <- 0
