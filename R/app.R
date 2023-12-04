@@ -48,7 +48,7 @@ geocatApp <- function(...) {
                 tags$details(
                   class="help",
                   tags$summary("Help"),
-                  "Add some instructions here explaining how the data section works"
+                  "Add point data to the map by uploading a CSV file, by querying GBIF, or manual addition through the circle marker icon. Enter a POWO code to map the native range of a species and use toggle to exclude non-native points."
                 ),
                 
                 tags$div(
@@ -151,7 +151,7 @@ geocatApp <- function(...) {
                 tags$details(
                   class="help",
                   tags$summary("Help"),
-                  "Add some instructions here explaining how the analysis section works"
+                  "Toggle the Analysis on/off button to analyse points and generate extent of occurrence (EOO) and area of occupancy (AOO) estimates and preliminary Red List categories."
                 ),
                 
                 tags$p(
@@ -179,7 +179,7 @@ geocatApp <- function(...) {
                 tags$details(
                   class="help",
                   tags$summary("Help"),
-                  "Add some instructions here explaining how the next steps section works"
+                  "Download your point data in a format aligned with the IUCN Mapping Standards, or click Reset to start over."
                 ),
                 
                 tags$div(
