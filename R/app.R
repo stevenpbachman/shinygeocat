@@ -263,7 +263,7 @@ geocatApp <- function(...) {
         tags$div(
           tags$p(
             id="disconnect-warning-description",
-            "Your session will timeout in under 60 second due to inactivity."
+            "Your session will timeout in under 60 seconds due to inactivity."
           ),
           actionButton("continue", "Click to continue your session"),
         )
@@ -278,7 +278,7 @@ geocatApp <- function(...) {
         tags$div(
           tags$p(
             id="disconnect-description",
-            glue::glue("Your session has timed out because of {timeoutTime} minutes of inactivity.")
+            glue::glue("Your session has unexpectedly ended, or timed out because of {timeoutTime} minutes of inactivity.")
           ),
           actionButton("reload", "Click to restart your session"),
         )
