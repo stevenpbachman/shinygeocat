@@ -465,14 +465,16 @@ geocatApp <- function(...) {
           group = "Protected Planet"
         )  %>%
 
+        leaflet::hideGroup("Protected Planet") %>%
+        
         leaflet::addLayersControl(
           baseGroups = c(
             "CartoDB Voyager",
             "Open Street Map",
             "ESRI Imagery",
-            "Open Topo Map",
-            "Protected Planet"
+            "Open Topo Map"
           ),
+          overlayGroups = "Protected Planet",
           options = leaflet::layersControlOptions(collapsed = TRUE)
         ) 
     })
