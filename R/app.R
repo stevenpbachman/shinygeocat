@@ -383,8 +383,10 @@ geocatApp <- function(...) {
     })
     
     # leaflet base output map ----
+    prot_planet_url <- "https://data-gis.unep-wcmc.org/server/rest/services/ProtectedSites/The_World_Database_of_Protected_Areas/MapServer/tile/{z}/{y}/{x}"
+    
     output$mymap <- leaflet::renderLeaflet({
-      leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 2,attributionControl=FALSE)) %>%
+      leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 2, attributionControl=FALSE)) %>%
         leaflet.extras::addSearchOSM(options = leaflet.extras::searchOptions(
           autoCollapse = F,
           collapsed = F,
@@ -453,31 +455,23 @@ geocatApp <- function(...) {
         )  %>%
         
         leaflet::addProviderTiles(
-          provider = "Esri.WorldTopoMap",
-          group = "Esri Topo Map",
+          provider = "OpenTopoMap",
+          group = "Open Topo Map",
           options = leaflet::providerTileOptions(noWrap = FALSE)
         )  %>%
         
-        leaflet::addProviderTiles(
-          provider = "Stamen.Toner",
-          group = "Stamen Toner",
-          options = leaflet::providerTileOptions(noWrap = FALSE)
+        leaflet::addTiles(
+          urlTemplate = prot_planet_url,
+          group = "Protected Planet"
         )  %>%
-        
-        leaflet::addProviderTiles(
-          provider = "Stamen.TonerLite",
-          group = "Stamen Toner Lite",
-          options = leaflet::providerTileOptions(noWrap = FALSE)
-        )  %>%
-        
+
         leaflet::addLayersControl(
           baseGroups = c(
             "CartoDB Voyager",
             "Open Street Map",
             "ESRI Imagery",
-            "Esri Topo Map",
-            "Stamen Toner",
-            "Stamen Toner Lite"
+            "Open Topo Map",
+            "Protected Planet"
           ),
           options = leaflet::layersControlOptions(collapsed = TRUE)
         ) 
