@@ -16,6 +16,10 @@
 import_csv <- function(path) {
   data <- read_csv(path, show_col_types=FALSE, progress=FALSE)
   data <- rename_with(data, str_to_lower)
+  ############check for lat or long fields and rename
+  colnames(data)[which("lat"== colnames(data))] <- "latitude"
+  colnames(data)[which("long"== colnames(data))] <- "longitude"
+  ###############
   
   template <- empty_tbl_()
   template_names <- colnames(template)

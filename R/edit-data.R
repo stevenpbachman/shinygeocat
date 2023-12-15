@@ -32,10 +32,23 @@ create_point_feature <- function(long, lat) {
 add_point <- function(feature) {
   id <- paste0("user", feature$properties[["_leaflet_id"]])
   note <- format_new_point(feature)
+  #################################
+  #JM this corrects any outside of -180 or 180 points in the data, but not the drawing
+  if (feature$geometry$coordinates[[1]] > 180){
+    longituder <- feature$geometry$coordinates[[1]]-360
+  } else if (feature$geometry$coordinates[[1]] < -180) {
+    longituder <- feature$geometry$coordinates[[1]] + 360
+  } else {
+    longituder <- feature$geometry$coordinates[[1]]
+  }
+  #################################
 
   tibble::tibble(
     latitude=feature$geometry$coordinates[[2]],
-    longitude=feature$geometry$coordinates[[1]],
+    #longitude=feature$geometry$coordinates[[1]],
+    longitude=longituder,
+    spatialref="WGS84",
+    yrcompiled=as.integer(format(Sys.Date(), "%Y")),
     geocat_use=TRUE,
     geocat_deleted=FALSE,
     geocat_source="User point",

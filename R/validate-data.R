@@ -21,17 +21,36 @@ validate_csv <- function(df) {
     geocat_notes=ifelse(is.na(longitude) | is.na(latitude), "Missing coordinates", geocat_notes)
   )
   
-  msg <- c(msg, warn_message(check_range_(df, "longitude", -180, 180)))
+  #deals with the case of points 0-360 or -360-0 for longitude and forces them to between -180-180
+  #JM 12 2023
+  #should send a message, but I can't work out Baz's code
   validated <- mutate(
-    validated, 
-    geocat_use=case_when(longitude < -180 ~ FALSE,
-                         longitude > 180 ~ FALSE, 
+      validated,
+      geocat_notes=case_when(longitude < -180 & longitude > -360 ~ "Longitude below -180, forced to between -180-180",
+                             longitude > 180 & longitude < 360 ~ "Longitude above 180, forced to between -180-180",
+                            .default = ""),
+
+      longitude=case_when(longitude < -180 & longitude > -360 ~ longitude + 360,
+                            longitude > 180 & longitude < 360 ~ longitude - 360,
+                          .default = longitude),
+  )
+
+  
+  msg <- c(msg, warn_message(check_range_(df, "longitude", -360, 360)))
+  validated <- mutate(
+    validated,
+
+
+    geocat_use=case_when(longitude < -360 ~ FALSE,
+                         longitude > 360 ~ FALSE, 
                          TRUE ~ geocat_use),
-    geocat_deleted=case_when(longitude < -180 ~ TRUE,
-                             longitude > 180 ~ TRUE, 
+    geocat_deleted=case_when(longitude < -36 ~ TRUE,
+                             longitude > 360 ~ TRUE, 
                              TRUE ~ geocat_deleted),
-    geocat_notes=case_when(longitude < -180 ~ "Longitude out of range",
-                           longitude > 180 ~ "Longitude out of range", 
+
+    
+    geocat_notes=case_when(longitude < -360 ~ "Longitude out of range",
+                           longitude > 360 ~ "Longitude out of range", 
                            TRUE ~ geocat_notes)
     )
   
