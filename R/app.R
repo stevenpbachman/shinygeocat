@@ -386,13 +386,14 @@ geocatApp <- function(...) {
     prot_planet_url <- "https://data-gis.unep-wcmc.org/server/rest/services/ProtectedSites/The_World_Database_of_Protected_Areas/MapServer/tile/{z}/{y}/{x}"
     
     output$mymap <- leaflet::renderLeaflet({
-      leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 2, attributionControl=FALSE)) %>%
+      leaflet::leaflet(options = leaflet::leafletOptions(minZoom = 1, attributionControl=FALSE,worldCopyJump=TRUE)) %>%
         leaflet.extras::addSearchOSM(options = leaflet.extras::searchOptions(
           autoCollapse = F,
           collapsed = F,
           minLength = 2,
           position = "topright"
         )) %>%
+        leaflet::setView(0 ,0,zoom = 2) %>%
         
         leaflet::addScaleBar(position = "bottomright") %>%
         
@@ -487,7 +488,7 @@ geocatApp <- function(...) {
       msg <- format_new_point(input$mymap_draw_new_feature)
       values$messages <- c(values$messages, info_message(paste(msg)))
     })
-    
+    #I DONT THINK THIS IS USED IN ANYWAY
     observeEvent(input$`key-add-point`, {
       long <- input$`custom-long`
       lat <- input$`custom-lat`
@@ -497,20 +498,7 @@ geocatApp <- function(...) {
       msg <- format_new_point(feature)
       values$messages <- c(values$messages, info_message(paste(msg)))   
       
-      leaflet::leafletProxy("mymap") %>% 
-        leaflet::addCircleMarkers(
-          group = "mappoints",
-          lng = long,
-          lat = lat,
-          color="#FFFFFF",
-          radius = circleRadius,
-          stroke=T,
-          weight=2.5,
-          fill=T,
-          fillColor=customCol,
-          opacity=1,
-          fillOpacity=0.5
-        )
+      
     })
     
     observeEvent(input$reload, {

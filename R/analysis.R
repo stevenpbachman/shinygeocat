@@ -34,6 +34,7 @@
 #' Joppa, L.N., Butchart, S.H.M., Hoffmann, M., Bachman, S.P., Akçakaya, H.R., Moat, J.F., Böhm, M., Holland, R.A., Newton, A., Polidoro, B., Hughes, A., 2016. Impact of alternative metrics on estimates of extent of occurrence for extinction risk assessment. Conserv. Biol. 30, 362–370. doi:10.1111/cobi.12591
 library(pracma)
 library (sf)
+library (smoothr) #probably change to terra at some point, but this is lightwieght
 
 eoosh <- function(points) {
   if (! "X" %in% colnames(points) | ! "Y" %in% colnames(points)) {
@@ -54,6 +55,8 @@ eoosh <- function(points) {
   p1 <- sf::st_polygon(list(p1))
   #set projection
   p1 <- sf::st_sfc(p1, crs = attr(points,'crs'))
+  #densify polygon to deal with real curves etc (ie not point to point lines)
+  p1 <- densify(p1,n=10)
   #to geographic
   p1 <- sf::st_transform(p1,4326)
   #dealing with dateline
