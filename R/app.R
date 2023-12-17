@@ -682,11 +682,12 @@ geocatApp <- function(...) {
                         paste('<b><i><font size = "3">',used_points$genus,used_points$specificEpithet,'</font></i></b>'),
                         paste(sep='','<b>Latitude,Longitude </b>',used_points$latitude,',',used_points$longitude),
                         paste('<b>locality</b>', used_points$locality,'<b>Uncertainty</b>',used_points$coordinateUncertaintyInMeters,'m'),
-                        paste('<b>Collector</b>',used_points$recorderBy, '<b>Year</b>', used_points$event_year),
+                        paste('<b>Collector</b>',used_points$recordedBy,'<b>Number</b>', used_points$recordNumber, '<b>Year</b>', used_points$event_year),
                         paste('<font size = "1">','<b>Catalog</b>', used_points$catalogNumber,'<b>Source</b>',used_points$source,'</font>'),
-                        paste('<font size = "1">','<b>GeoCAT id</b>' , used_points$geocat_id,'<b>GeoCAT notes</b>', used_points$geocat_notes,'</font>')
+                        paste('<font size = "1">','<b>GeoCAT id</b>', used_points$geocat_id,'<b>GeoCAT notes</b>', used_points$geocat_notes,'</font>'),
+                        paste('<font size="1">', '<b>GBIF ID</b>', '<a href="', used_points$gbifID, '" target="_blank">GBIF occurrence link</a>', '</font>')
       )
-      
+
       leafletProxy("mymap") %>%
         leaflet::addCircleMarkers(
           popup = ~pcontent,
@@ -722,8 +723,11 @@ geocatApp <- function(...) {
     shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
       
       if (input$Analysis & !is.null(values$aoo_polygon)){
+        bb_aoo <- sf::st_bbox(values$aoo_polygon)
         leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
           leaflet::clearGroup("AOOpolys") %>%
+          #zoom to
+          leaflet::fitBounds(bb_aoo[[1]], bb_aoo[[2]], bb_aoo[[3]], bb_aoo[[4]]) %>%
           leaflet::addPolygons(
             color = "#000000",
             stroke = T,
