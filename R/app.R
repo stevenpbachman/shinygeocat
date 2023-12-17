@@ -685,7 +685,7 @@ geocatApp <- function(...) {
                         paste('<b>Collector</b>',used_points$recordedBy,'<b>Number</b>', used_points$recordNumber, '<b>Year</b>', used_points$event_year),
                         paste('<font size = "1">','<b>Catalog</b>', used_points$catalogNumber,'<b>Source</b>',used_points$source,'</font>'),
                         paste('<font size = "1">','<b>GeoCAT id</b>', used_points$geocat_id,'<b>GeoCAT notes</b>', used_points$geocat_notes,'</font>'),
-                        paste('<font size="1">', '<b>GBIF occurrence</b>', '<a href="', used_points$gbifID, '" target="_blank">GBIF occurrence link</a>', '</font>')
+                        paste('<font size="1">', '<b>GBIF ID</b>', '<a href="', used_points$gbifID, '" target="_blank">GBIF occurrence link</a>', '</font>')
       )
 
       leafletProxy("mymap") %>%
