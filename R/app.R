@@ -723,8 +723,11 @@ geocatApp <- function(...) {
     shiny::observeEvent(list(input$Analysis, values$eoo_polygon, values$aoo_polygon), {
       
       if (input$Analysis & !is.null(values$aoo_polygon)){
+        bb_aoo <- sf::st_bbox(values$aoo_polygon)
         leaflet::leafletProxy("mymap", data=values$aoo_polygon) %>%
           leaflet::clearGroup("AOOpolys") %>%
+          #zoom to
+          leaflet::fitBounds(bb_aoo[[1]], bb_aoo[[2]], bb_aoo[[3]], bb_aoo[[4]]) %>%
           leaflet::addPolygons(
             color = "#000000",
             stroke = T,
