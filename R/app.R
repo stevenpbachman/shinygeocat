@@ -682,11 +682,12 @@ geocatApp <- function(...) {
                         paste('<b><i><font size = "3">',used_points$genus,used_points$specificEpithet,'</font></i></b>'),
                         paste(sep='','<b>Latitude,Longitude </b>',used_points$latitude,',',used_points$longitude),
                         paste('<b>locality</b>', used_points$locality,'<b>Uncertainty</b>',used_points$coordinateUncertaintyInMeters,'m'),
-                        paste('<b>Collector</b>',used_points$recordedBy, '<b>Number</b>', used_points$recordNumber, '<b>Year</b>', used_points$event_year),
+                        paste('<b>Collector</b>',used_points$recordedBy,'<b>Number</b>', used_points$recordNumber, '<b>Year</b>', used_points$event_year),
                         paste('<font size = "1">','<b>Catalog</b>', used_points$catalogNumber,'<b>Source</b>',used_points$source,'</font>'),
-                        paste('<font size = "1">','<b>GeoCAT id</b>' , used_points$geocat_id,'<b>GeoCAT notes</b>', used_points$geocat_notes,'</font>')
+                        paste('<font size = "1">','<b>GeoCAT id</b>', used_points$geocat_id,'<b>GeoCAT notes</b>', used_points$geocat_notes,'</font>'),
+                        paste('<font size="1">', '<b>GBIF occurrence</b>', '<a href="', used_points$gbifID, '" target="_blank">GBIF occurrence link</a>', '</font>')
       )
-      
+
       leafletProxy("mymap") %>%
         leaflet::addCircleMarkers(
           popup = ~pcontent,

@@ -135,7 +135,8 @@ gbif_points_ <- function(points) {
     source="occurrenceID",
     recordedBy="recordedBy",
     recordNumber="recordNumber",
-    datasetKey="datasetKey"
+    datasetKey="datasetKey",
+    gbifID="gbifID"
   )
   
   points_list <- sapply(
@@ -144,6 +145,8 @@ gbif_points_ <- function(points) {
     simplify=FALSE,
     USE.NAMES=TRUE
   ) 
+  
+  points_list$gbifID <- paste0("https://www.gbif.org/occurrence/", points_list$gbifID)
   
   dplyr::as_tibble(points_list)
 }
