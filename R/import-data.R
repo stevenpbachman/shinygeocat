@@ -134,7 +134,7 @@ gbif_points_ <- function(points) {
     spatialref="geodeticDatum",
     source="occurrenceID",
     recordedBy="recordedBy",
-    recordNumber="collectionCode",
+    recordNumber="recordNumber",
     datasetKey="datasetKey"
   )
   
