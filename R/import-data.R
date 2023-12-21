@@ -14,7 +14,13 @@
 #' 
 #' @import dplyr stringr readr
 import_csv <- function(path) {
-  data <- read_csv(path, show_col_types=FALSE, progress=FALSE)
+  #######handles ; and ,#######
+  browser()
+  fl <- readLines(path, n = 1)
+  numfields <- count.fields(textConnection(fl), sep = ";")
+  if (numfields == 1) data <- read.csv(path,fileEncoding="latin1") else data <- read.csv2(path,fileEncoding="latin1")
+  
+  #data <- read_csv(path, show_col_types=FALSE, progress=FALSE)
   data <- rename_with(data, str_to_lower)
   ############check for lat or long fields and rename
   colnames(data)[which("lat"== colnames(data))] <- "latitude"
@@ -37,7 +43,8 @@ import_csv <- function(path) {
   data$geocat_deleted <- FALSE
   data$geocat_id <- paste0("csv", seq(1, nrow(data)))
   data$geocat_notes <- NA_character_
-  
+#####
+
   data
 }
 
