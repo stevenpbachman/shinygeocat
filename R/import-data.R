@@ -15,7 +15,7 @@
 #' @import dplyr stringr readr
 import_csv <- function(path) {
   #######handles ; and ,#######
-  browser()
+  #browser()
   fl <- readLines(path, n = 1)
   numfields <- count.fields(textConnection(fl), sep = ";")
   if (numfields == 1) data <- read.csv(path,fileEncoding="latin1") else data <- read.csv2(path,fileEncoding="latin1")
